@@ -1,4 +1,10 @@
 
+(** {1 Linol}
+
+    Abstraction over The "Lsp" library, to make it easier to develop
+    LSP servers in OCaml (but not necessarily {b for} OCaml). *)
+
+(** {2 Parametrized IO Interface} *)
 module type IO = sig
   type 'a t
   val return : 'a -> 'a t
@@ -10,6 +16,7 @@ module type IO = sig
   type out_channel
 end
 
+(** {2 Server interface for some IO substrate} *)
 module Make(IO : IO) = struct
   open Lsp.Types
 

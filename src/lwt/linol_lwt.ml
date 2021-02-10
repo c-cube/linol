@@ -1,6 +1,6 @@
 
-module type IO = Lsp_server.IO
-module Make = Lsp_server.Make
+module type IO = Linol.IO
+module Make = Linol.Make
 module Jsonrpc2 = Jsonrpc2
 module Task = Task
 

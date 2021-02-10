@@ -3,7 +3,7 @@ version: "0.1"
 maintainer: "simon.cruanes.2007@m4x.org"
 author: "Simon Cruanes"
 homepage: "https://github.com/c-cube/linol"
-synopsis: "LSP server library"
+synopsis: "LSP server library (with Lwt for concurrency)"
 build: [
   ["dune" "build" "@install" "-p" name "-j" jobs]
   ["dune" "build" "@runtest" "-p" name "-j" jobs] {with-test}
@@ -11,12 +11,16 @@ build: [
 ]
 depends: [
   "dune" { >= "2.0" }
-  "containers" { >= "3.0" & < "4.0" }
+  "linol" { = version }
   "lsp" { >= "1.4" & < "1.5" }
+  "jsonrpc" { >= "1.4" & < "1.5" }
+  "containers" { >= "3.0" & < "4.0" }
+  "lwt" { >= "5.1" & < "6.0" }
+  "yojson" { >= "1.6" }
   "ocaml" { >= "4.08" }
   "odoc" { with-doc }
 ]
-tags: [ "lsp" "server" "lwt" ]
+tags: [ "lsp" "server" "lwt" "linol" ]
 bug-reports: "https://github.com/c-cube/linol/issues"
 dev-repo: "git+https://github.com/c-cube/linol.git"
 

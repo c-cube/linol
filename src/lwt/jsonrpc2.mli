@@ -1,5 +1,5 @@
 
-module IO : Lsp_server.IO
+module IO : Linol.IO
   with type 'a t = 'a Task.m
    and type in_channel = Lwt_io.input Lwt_io.channel
    and type out_channel = Lwt_io.output Lwt_io.channel
@@ -9,7 +9,7 @@ type json = Yojson.Safe.t
 type t
 (** A jsonrpc2 connection. *)
 
-include module type of Lsp_server.Make(IO)
+include module type of Linol.Make(IO)
 
 val create :
   ic:IO.in_channel ->

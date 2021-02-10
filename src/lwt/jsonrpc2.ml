@@ -20,7 +20,7 @@ module IO = struct
   type out_channel = Lwt_io.output Lwt_io.channel
 end
 
-include Lsp_server.Make(IO)
+include Linol.Make(IO)
 
 type json = J.t
 type 'a m = 'a Task.m
