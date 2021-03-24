@@ -3,4 +3,4 @@
   (name linol)
   (public_name linol)
   (flags :standard -warn-error -a+8)
-  (libraries containers lwt lwt.unix lsp))
+  (libraries containers lsp))
