@@ -80,7 +80,7 @@ module Make(IO : IO) = struct
       try Some (Hashtbl.find docs uri)
       with Not_found -> None
 
-    (** Overload to process other requests *)
+    (** Override to process other requests *)
     method on_request_unhandled
       : type r. r Lsp.Client_request.t -> r IO.t
       = fun _r ->
@@ -177,6 +177,11 @@ module Make(IO : IO) = struct
       new_content:string ->
       unit IO.t
 
+    (** Override to handle unprocessed notifications *)
+    method on_notification_unhandled
+        ~notify_back:_ (_n:Lsp.Client_notification.t) : unit IO.t =
+      IO.return ()
+
     method on_notification
         ~notify_back (n:Lsp.Client_notification.t) : unit IO.t =
       let open Lsp.Types in
@@ -229,7 +234,7 @@ module Make(IO : IO) = struct
         | Lsp.Client_notification.Unknown_notification _
         | Lsp.Client_notification.CancelRequest _
           ->
-          IO.return () (* TODO: method for each of these *)
+          self#on_notification_unhandled ~notify_back n
       end
   end
 end
