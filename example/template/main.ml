@@ -58,7 +58,7 @@ class lsp_server =
 
     (* We now override the [on_notify_doc_did_open] method that will be called
        by the server each time a new document is opened. *)
-    method on_notif_doc_did_open ~notify_back d ~content : unit Linol_lwt.Task.m =
+    method on_notif_doc_did_open ~notify_back d ~content : unit Linol_lwt.t =
       self#_on_doc ~notify_back d.uri content
 
     (* Similarly, we also override the [on_notify_doc_did_change] method that will be called
@@ -68,9 +68,9 @@ class lsp_server =
 
     (* On document closes, we remove the state associated to the file from the global
        hashtable state, to avoid leaking memory. *)
-    method on_notif_doc_did_close ~notify_back:_ d : unit Linol_lwt.Task.m =
+    method on_notif_doc_did_close ~notify_back:_ d : unit Linol_lwt.t =
       Hashtbl.remove buffers d.uri;
-      Linol_lwt.Jsonrpc2.IO.return ()
+      Linol_lwt.return ()
 
   end
 
@@ -78,24 +78,12 @@ class lsp_server =
    This is the code that creates an instance of the lsp server class
    and runs it as a task. *)
 let run () =
-  let open Linol_lwt.Task.Infix in
   let s = new lsp_server in
-  (* TODO: the task is the LSP server *)
-  let task =
-    Linol_lwt.Task.start ~descr:"top task"
-      (fun _top_task ->
-         let server = Linol_lwt.Jsonrpc2.create_stdio s in
-         let* () =
-           Linol_lwt.Task.run_sub ~descr:"lsp server" ~parent:_top_task
-             (fun _ -> Linol_lwt.Jsonrpc2.run server _top_task)
-           >>= Linol_lwt.Task.unwrap
-         in
-         Linol_lwt.Task.return ()
-      )
-  in
-  match Linol_lwt.Task.run task with
-  | Ok () -> ()
-  | Error e ->
+  let server = Linol_lwt.Jsonrpc2.create_stdio s in
+  let task = Linol_lwt.Jsonrpc2.run server in
+  match Linol_lwt.run task with
+  | () -> ()
+  | exception e ->
     let e = Printexc.to_string e in
     Printf.eprintf "error: %s\n%!" e;
     exit 1
