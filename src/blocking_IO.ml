@@ -18,8 +18,12 @@ let spawn f =
   let run () =
     try f()
     with e ->
-      Printf.eprintf "linol: uncaught exception in `spawn`:\n%s\n%!"
-        (Printexc.to_string e);
+      let msg =
+        Printf.sprintf "linol: uncaught exception in `spawn`:\n%s\n%!"
+          (Printexc.to_string e)
+      in
+      !Jsonrpc2._log (fun () -> msg);
+      Printf.eprintf "%s\n%!" msg;
       raise e
 in
   ignore (Thread.create run () : Thread.t)

@@ -10,6 +10,8 @@ type json = Yojson.Safe.t
 
 module type IO = Sigs.IO
 
+let _log : ((unit -> string) -> unit) ref = ref (fun _ -> ())
+
 module type S = sig
   module IO : IO
 
