@@ -86,7 +86,7 @@ module Make(IO : IO) = struct
       TextDocumentSyncOptions.create
           ~change:TextDocumentSyncKind.Incremental ~willSave:false ()
 
-    method config_code_lens_provider : CodeLensOptions.t option = None
+    method config_code_lens_options : CodeLensOptions.t option = None
     (** @since NEXT_RELEASE *)
 
     method config_code_action_provider : [`CodeActionOptions of CodeActionOptions.t | `Bool of bool] = `Bool false
@@ -101,7 +101,7 @@ module Make(IO : IO) = struct
       let sync_opts = self#config_sync_opts in
       let capabilities =
         ServerCapabilities.create
-          ?codeLensProvider:self#config_code_lens_provider
+          ?codeLensProvider:self#config_code_lens_options
           ~codeActionProvider:self#config_code_action_provider
           ~textDocumentSync:(`TextDocumentSyncOptions sync_opts) ()
         |> self#config_modify_capabilities
