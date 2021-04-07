@@ -144,7 +144,7 @@ module Make(IO : IO) = struct
 
     (** Code action.
         @since NEXT_RELEASE *)
-    method on_req_code_action ~notify_back:(_:notify_back) (c:CodeActionParams.t)
+    method on_req_code_action ~notify_back:(_:notify_back) (_c:CodeActionParams.t)
       : CodeActionResult.t IO.t =
       assert false (* TODO *)
 
@@ -296,6 +296,7 @@ module Make(IO : IO) = struct
         | Lsp.Client_notification.Unknown_notification _
         | Lsp.Client_notification.CancelRequest _
           ->
+          let notify_back = new notify_back ~notify_back () in
           self#on_notification_unhandled ~notify_back n
       end
   end
