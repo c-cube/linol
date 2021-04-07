@@ -26,6 +26,7 @@ module Make(IO : IO) = struct
       unit IO.t
 
     method virtual on_request : 'a.
+      notify_back:(Lsp.Server_notification.t -> unit IO.t) ->
       'a Lsp.Client_request.t ->
       'a IO.t
 
@@ -34,7 +35,7 @@ module Make(IO : IO) = struct
   end
 
   (** A wrapper to more easily reply to notifications *)
-  class notify_back ~notify_back ?version ~(uri:DocumentUri.t) () = object
+  class notify_back ~notify_back ?version ?(uri:DocumentUri.t option) () = object
     (** Send a log message to the editor *)
     method send_log_msg ~type_ msg : unit IO.t =
       let params = ShowMessageParams.create ~type_ ~message:msg in
@@ -42,9 +43,12 @@ module Make(IO : IO) = struct
 
     (** Send diagnostics for the current document *)
     method send_diagnostic (l:Diagnostic.t list) : unit IO.t =
-      let params = PublishDiagnosticsParams.create
-          ~uri ?version ~diagnostics:l () in
-      notify_back (Lsp.Server_notification.PublishDiagnostics params)
+      match uri with
+      | None -> IO.failwith "notify_back: cannot publish diagnostics, no URI given"
+      | Some uri ->
+        let params = PublishDiagnosticsParams.create
+            ~uri ?version ~diagnostics:l () in
+        notify_back (Lsp.Server_notification.PublishDiagnostics params)
 
     (** Send a notification (general purpose method) *)
     method send_notification (n:Lsp.Server_notification.t) =
@@ -77,8 +81,8 @@ module Make(IO : IO) = struct
 
     (** Override to process other requests *)
     method on_request_unhandled
-      : type r. r Lsp.Client_request.t -> r IO.t
-      = fun _r ->
+      : type r. notify_back:notify_back -> r Lsp.Client_request.t -> r IO.t
+      = fun ~notify_back:_ _r ->
         IO.failwith "TODO: handle this request"
 
     (** Parameter for how to synchronize content with the editor *)
@@ -97,7 +101,8 @@ module Make(IO : IO) = struct
         @since NEXT_RELEASE *)
     method config_modify_capabilities (c:ServerCapabilities.t) : ServerCapabilities.t = c
 
-    method on_req_initialize (_i:InitializeParams.t) : InitializeResult.t IO.t =
+    method on_req_initialize ~notify_back:_
+        (_i:InitializeParams.t) : InitializeResult.t IO.t =
       let sync_opts = self#config_sync_opts in
       let capabilities =
         ServerCapabilities.create
@@ -109,57 +114,82 @@ module Make(IO : IO) = struct
       IO.return @@ InitializeResult.create ~capabilities ()
 
     (** Called when the user hovers on some identifier in the document *)
-    method on_req_hover ~uri:_ ~pos:_ (_ : doc_state) : Hover.t option IO.t =
+    method on_req_hover ~notify_back:_~uri:_ ~pos:_
+        (_ : doc_state) : Hover.t option IO.t =
       IO.return None
 
     (** Called when the user requests completion in the document *)
-    method on_req_completion ~uri:_ ~pos:_ ~ctx:_
+    method on_req_completion  ~notify_back:_~uri:_ ~pos:_ ~ctx:_
         (_ : doc_state) :
           [ `CompletionList of CompletionList.t
           | `List of CompletionItem.t list ] option IO.t =
       IO.return None
 
     (** Called when the user wants to jump-to-definition  *)
-    method on_req_definition ~uri:_ ~pos:_ (_ : doc_state) : Locations.t option IO.t =
+    method on_req_definition  ~notify_back:_~uri:_ ~pos:_
+        (_ : doc_state) : Locations.t option IO.t =
       IO.return None
 
     (** List code lenses for the given document
         @since NEXT_RELEASE *)
-    method on_req_code_lens ~uri:_ (_ : doc_state) : CodeLens.t list IO.t =
+    method on_req_code_lens  ~notify_back:_ ~uri:_
+        (_ : doc_state) : CodeLens.t list IO.t =
       IO.return []
 
     (** Code lens resolution, must return a code lens with non null "command"
         @since NEXT_RELEASE *)
-    method on_req_code_lens_resolve (cl:CodeLens.t) : CodeLens.t IO.t =
+    method on_req_code_lens_resolve
+        ~notify_back:(_:notify_back) (cl:CodeLens.t) : CodeLens.t IO.t =
       IO.return cl
+
+    (** Code action.
+        @since NEXT_RELEASE *)
+    method on_req_code_action ~notify_back:(_:notify_back) (c:CodeActionParams.t)
+      : CodeActionResult.t IO.t =
+      assert false (* TODO *)
 
     (** Execute a command with given arguments.
         @since NEXT_RELEASE *)
-    method on_req_execute_command (_c:string) (_args:Yojson.Safe.t list option) : Yojson.Safe.t IO.t =
+    method on_req_execute_command ~notify_back:_
+        (_c:string) (_args:Yojson.Safe.t list option) : Yojson.Safe.t IO.t =
       IO.return `Null
 
     method on_request
-    : type r. r Lsp.Client_request.t -> r IO.t
-    = fun (r:_ Lsp.Client_request.t) ->
+    : type r. notify_back:_ -> r Lsp.Client_request.t -> r IO.t
+    = fun ~notify_back (r:_ Lsp.Client_request.t) ->
       begin match r with
         | Lsp.Client_request.Shutdown -> _quit <- true; IO.return ()
-        | Lsp.Client_request.Initialize i -> self#on_req_initialize i
+        | Lsp.Client_request.Initialize i ->
+          let notify_back = new notify_back ~notify_back () in
+          self#on_req_initialize ~notify_back i
         | Lsp.Client_request.TextDocumentHover { textDocument; position } ->
-          let doc_st = Hashtbl.find docs textDocument.uri in
-          self#on_req_hover ~uri:textDocument.uri ~pos:position doc_st
+          let uri = textDocument.uri in
+          let doc_st = Hashtbl.find docs uri in
+          let notify_back = new notify_back ~uri ~notify_back () in
+          self#on_req_hover ~notify_back ~uri ~pos:position doc_st
         | Lsp.Client_request.TextDocumentCompletion { textDocument; position; context } ->
-          let doc_st = Hashtbl.find docs textDocument.uri in
-          self#on_req_completion ~uri:textDocument.uri ~pos:position ~ctx:context doc_st
+          let uri = textDocument.uri in
+          let doc_st = Hashtbl.find docs uri in
+          let notify_back = new notify_back ~uri ~notify_back () in
+          self#on_req_completion ~notify_back ~uri
+            ~pos:position ~ctx:context doc_st
         | Lsp.Client_request.TextDocumentDefinition { textDocument; position } ->
-          let doc_st = Hashtbl.find docs textDocument.uri in
-          self#on_req_definition ~uri:textDocument.uri ~pos:position doc_st
+          let uri = textDocument.uri in
+          let notify_back = new notify_back ~uri ~notify_back () in
+          let doc_st = Hashtbl.find docs uri in
+          self#on_req_definition ~notify_back
+            ~uri ~pos:position doc_st
         | Lsp.Client_request.TextDocumentCodeLens {textDocument} ->
-          let doc_st = Hashtbl.find docs textDocument.uri in
-          self#on_req_code_lens ~uri:textDocument.uri doc_st
+          let uri = textDocument.uri in
+          let notify_back = new notify_back ~uri ~notify_back () in
+          let doc_st = Hashtbl.find docs uri in
+          self#on_req_code_lens ~notify_back ~uri doc_st
         | Lsp.Client_request.TextDocumentCodeLensResolve cl ->
-          self#on_req_code_lens_resolve cl
+          let notify_back = new notify_back ~notify_back () in
+          self#on_req_code_lens_resolve ~notify_back cl
         | Lsp.Client_request.ExecuteCommand { command; arguments } ->
-          self#on_req_execute_command command arguments
+          let notify_back = new notify_back ~notify_back () in
+          self#on_req_execute_command ~notify_back command arguments
 
         | Lsp.Client_request.TextDocumentDeclaration _
         | Lsp.Client_request.TextDocumentTypeDefinition _
@@ -183,7 +213,9 @@ module Make(IO : IO) = struct
         | Lsp.Client_request.TextDocumentColorPresentation _
         | Lsp.Client_request.TextDocumentColor _
         | Lsp.Client_request.SelectionRange _
-        | Lsp.Client_request.UnknownRequest _ -> self#on_request_unhandled r
+        | Lsp.Client_request.UnknownRequest _ ->
+          let notify_back = new notify_back ~notify_back () in
+          self#on_request_unhandled ~notify_back r
       end
 
     (** Called when a document is opened *)

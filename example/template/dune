@@ -1,7 +1,7 @@
 (executable
   (name         main)
   (libraries
-    ; Deps on linol
+    ; Deps on linol + LWT backend
     linol linol-lwt
     ; Types from the lsp library are exposed by the linol libs,
     ; and thus almost guaranteed to be used by code using linol;

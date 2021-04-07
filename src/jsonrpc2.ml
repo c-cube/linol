@@ -209,7 +209,11 @@ module Make(IO : IO)
             begin match Lsp.Client_request.of_jsonrpc {r with M.id} with
               | Ok (Lsp.Client_request.E r) ->
                 protect ~id (fun () ->
-                  let* reply = self.s#on_request r in
+                  let* reply = self.s#on_request r
+                    ~notify_back:(fun n ->
+                        let msg = Lsp.Server_notification.to_jsonrpc n in
+                        send_server_notif self msg)
+                  in
                   let reply_json = Lsp.Client_request.yojson_of_result r reply in
                   let response = Jsonrpc.Response.ok id reply_json in
                   send_response self response
