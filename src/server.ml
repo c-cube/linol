@@ -133,6 +133,11 @@ module Make(IO : IO) = struct
     method on_req_code_lens_resolve (cl:CodeLens.t) : CodeLens.t IO.t =
       IO.return cl
 
+    (** Execute a command with given arguments.
+        @since NEXT_RELEASE *)
+    method on_req_execute_command (_c:string) (_args:Yojson.Safe.t list option) : Yojson.Safe.t IO.t =
+      IO.return `Null
+
     method on_request
     : type r. r Lsp.Client_request.t -> r IO.t
     = fun (r:_ Lsp.Client_request.t) ->
@@ -153,6 +158,9 @@ module Make(IO : IO) = struct
           self#on_req_code_lens ~uri:textDocument.uri doc_st
         | Lsp.Client_request.TextDocumentCodeLensResolve cl ->
           self#on_req_code_lens_resolve cl
+        | Lsp.Client_request.ExecuteCommand { command; arguments } ->
+          self#on_req_execute_command command arguments
+
         | Lsp.Client_request.TextDocumentDeclaration _
         | Lsp.Client_request.TextDocumentTypeDefinition _
         | Lsp.Client_request.TextDocumentPrepareRename _
@@ -175,7 +183,6 @@ module Make(IO : IO) = struct
         | Lsp.Client_request.TextDocumentColorPresentation _
         | Lsp.Client_request.TextDocumentColor _
         | Lsp.Client_request.SelectionRange _
-        | Lsp.Client_request.ExecuteCommand _
         | Lsp.Client_request.UnknownRequest _ -> self#on_request_unhandled r
       end
 
