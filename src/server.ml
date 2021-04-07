@@ -123,6 +123,16 @@ module Make(IO : IO) = struct
     method on_req_definition ~uri:_ ~pos:_ (_ : doc_state) : Locations.t option IO.t =
       IO.return None
 
+    (** List code lenses for the given document
+        @since NEXT_RELEASE *)
+    method on_req_code_lens ~uri:_ (_ : doc_state) : CodeLens.t list IO.t =
+      IO.return []
+
+    (** Code lens resolution, must return a code lens with non null "command"
+        @since NEXT_RELEASE *)
+    method on_req_code_lens_resolve (cl:CodeLens.t) : CodeLens.t IO.t =
+      IO.return cl
+
     method on_request
     : type r. r Lsp.Client_request.t -> r IO.t
     = fun (r:_ Lsp.Client_request.t) ->
@@ -138,10 +148,13 @@ module Make(IO : IO) = struct
         | Lsp.Client_request.TextDocumentDefinition { textDocument; position } ->
           let doc_st = Hashtbl.find docs textDocument.uri in
           self#on_req_definition ~uri:textDocument.uri ~pos:position doc_st
+        | Lsp.Client_request.TextDocumentCodeLens {textDocument} ->
+          let doc_st = Hashtbl.find docs textDocument.uri in
+          self#on_req_code_lens ~uri:textDocument.uri doc_st
+        | Lsp.Client_request.TextDocumentCodeLensResolve cl ->
+          self#on_req_code_lens_resolve cl
         | Lsp.Client_request.TextDocumentDeclaration _
         | Lsp.Client_request.TextDocumentTypeDefinition _
-        | Lsp.Client_request.TextDocumentCodeLens _
-        | Lsp.Client_request.TextDocumentCodeLensResolve _
         | Lsp.Client_request.TextDocumentPrepareRename _
         | Lsp.Client_request.TextDocumentRename _
         | Lsp.Client_request.TextDocumentLink _
