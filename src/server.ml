@@ -86,11 +86,26 @@ module Make(IO : IO) = struct
       TextDocumentSyncOptions.create
           ~change:TextDocumentSyncKind.Incremental ~willSave:false ()
 
+    method config_code_lens_provider : CodeLensOptions.t option = None
+    (** @since NEXT_RELEASE *)
+
+    method config_code_action_provider : [`CodeActionOptions of CodeActionOptions.t | `Bool of bool] = `Bool false
+    (** @since NEXT_RELEASE *)
+
+    (** Modify capabilities before sending them back to the client.
+        By default we just return them unmodified.
+        @since NEXT_RELEASE *)
+    method config_modify_capabilities (c:ServerCapabilities.t) : ServerCapabilities.t = c
+
     method on_req_initialize (_i:InitializeParams.t) : InitializeResult.t IO.t =
       let sync_opts = self#config_sync_opts in
       let capabilities =
         ServerCapabilities.create
-          ~textDocumentSync:(`TextDocumentSyncOptions sync_opts) () in
+          ?codeLensProvider:self#config_code_lens_provider
+          ~codeActionProvider:self#config_code_action_provider
+          ~textDocumentSync:(`TextDocumentSyncOptions sync_opts) ()
+        |> self#config_modify_capabilities
+      in
       IO.return @@ InitializeResult.create ~capabilities ()
 
     (** Called when the user hovers on some identifier in the document *)
