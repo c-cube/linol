@@ -101,6 +101,9 @@ module Make(IO : IO) = struct
         @since NEXT_RELEASE *)
     method config_modify_capabilities (c:ServerCapabilities.t) : ServerCapabilities.t = c
 
+    (** List of commands available *)
+    method config_list_commands : string list = []
+
     method on_req_initialize ~notify_back:_
         (_i:InitializeParams.t) : InitializeResult.t IO.t =
       let sync_opts = self#config_sync_opts in
@@ -108,6 +111,7 @@ module Make(IO : IO) = struct
         ServerCapabilities.create
           ?codeLensProvider:self#config_code_lens_options
           ~codeActionProvider:self#config_code_action_provider
+          ~executeCommandProvider:(ExecuteCommandOptions.create ~commands:self#config_list_commands ())
           ~textDocumentSync:(`TextDocumentSyncOptions sync_opts) ()
         |> self#config_modify_capabilities
       in
