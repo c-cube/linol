@@ -171,10 +171,11 @@ module Make(IO : IO)
       let protect ~id f =
         IO.catch f
           (fun e ->
+             let message = spf "%s\n%s" (Printexc.to_string e) (Printexc.get_backtrace()) in
              let r = Jsonrpc.Response.error id
                (Jsonrpc.Response.Error.make
                  ~code:Jsonrpc.Response.Error.Code.InternalError
-                 ~message:(Printexc.to_string e) ())
+                 ~message ())
             in
             send_response self r)
       in
@@ -222,11 +223,12 @@ module Make(IO : IO)
                 IO.failwith (spf "cannot decode request: %s" e)
             end)
           (fun e ->
+            let message = spf "%s\n%s" (Printexc.to_string e) (Printexc.get_backtrace()) in
             let r =
               Jsonrpc.Response.error id
               (Jsonrpc.Response.Error.make
                 ~code:Jsonrpc.Response.Error.Code.InternalError
-                ~message:(Printexc.to_string e) ())
+                ~message ())
             in
             send_response self r)
     in
