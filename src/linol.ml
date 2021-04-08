@@ -8,5 +8,6 @@ module type IO = Sigs.IO
 module Jsonrpc2 = Jsonrpc2
 module Server = Server
 module Blocking_IO = Blocking_IO
+module Log = Log
 
 module Make = Jsonrpc2.Make

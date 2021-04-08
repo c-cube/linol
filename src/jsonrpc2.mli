@@ -31,6 +31,3 @@ end
 
 module Make(IO : IO) : S with module IO = IO
 
-(**/**)
-val _log : ((unit -> string) -> unit) ref
-(**/**)

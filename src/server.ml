@@ -164,8 +164,17 @@ module Make(IO : IO) = struct
     method on_request
     : type r. notify_back:_ -> r Lsp.Client_request.t -> r IO.t
     = fun ~notify_back (r:_ Lsp.Client_request.t) ->
+
+      Log.debug
+        (fun k->k "handle request : %a" Yojson.Safe.pp
+            (Lsp.Client_request.to_jsonrpc_request ~id:(Jsonrpc.Id.t_of_yojson `Null) r
+             |> Jsonrpc.Message.yojson_of_request));
+
       begin match r with
-        | Lsp.Client_request.Shutdown -> _quit <- true; IO.return ()
+        | Lsp.Client_request.Shutdown ->
+          Log.info (fun k->k "shutdown");
+          _quit <- true; IO.return ()
+
         | Lsp.Client_request.Initialize i ->
           let notify_back = new notify_back ~notify_back () in
           self#on_req_initialize ~notify_back i
@@ -266,6 +275,11 @@ module Make(IO : IO) = struct
     method on_notification
         ~notify_back (n:Lsp.Client_notification.t) : unit IO.t =
       let open Lsp.Types in
+
+      Log.debug
+        (fun k->k "handle notification: %a" Yojson.Safe.pp
+            (Lsp.Client_notification.to_jsonrpc n |> Jsonrpc.Message.yojson_of_notification));
+
       begin match n with
         | Lsp.Client_notification.TextDocumentDidOpen
             {DidOpenTextDocumentParams.textDocument=doc} ->

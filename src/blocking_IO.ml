@@ -18,12 +18,9 @@ let spawn f =
   let run () =
     try f()
     with e ->
-      let msg =
-        Printf.sprintf "linol: uncaught exception in `spawn`:\n%s\n%!"
-          (Printexc.to_string e)
-      in
-      !Jsonrpc2._log (fun () -> msg);
-      Printf.eprintf "%s\n%!" msg;
+      Log.err (fun k->k
+        "uncaught exception in `spawn`:\n%s\n%!"
+        (Printexc.to_string e));
       raise e
 in
   ignore (Thread.create run () : Thread.t)
@@ -40,14 +37,9 @@ let rec read ic buf i len =
     read ic buf (i+n) (len-n)
   )
 
-let read_line ic =
-  let s = input_line ic in
-  !Jsonrpc2._log (fun () -> spf "read line: '%s'" s);
-  s
+let read_line = input_line
 
 let write oc b i len =
-  !Jsonrpc2._log (fun () -> spf "write '%s'[%d..%d]" (Bytes.unsafe_to_string b) i (i+len));
   output oc b i len; flush oc
 let write_string oc s =
-  !Jsonrpc2._log (fun () -> spf "write-str '%s'" s);
   output_string oc s; flush oc

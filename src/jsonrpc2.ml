@@ -10,8 +10,6 @@ type json = Yojson.Safe.t
 
 module type IO = Sigs.IO
 
-let _log : ((unit -> string) -> unit) ref = ref (fun _ -> ())
-
 module type S = sig
   module IO : IO
 
@@ -82,6 +80,7 @@ module Make(IO : IO)
   (* send a single message *)
   let send_json_ (self:t) (j:json) : unit IO.t =
     let json = J.to_string j in
+    Log.debug (fun k->k "jsonrpc2: send json: %s" json);
     let full_s =
       Printf.sprintf "Content-Length: %d\r\n\r\n%s"
         (String.length json) json
@@ -100,13 +99,6 @@ module Make(IO : IO)
     IO.catch
       (fun () -> let+ x = f() in Ok x)
       (fun e -> IO.return (Error e))
-
-  let log_lsp_ msg =
-    Fmt.kasprintf
-      (fun s ->
-        Lsp.Logger.log ~title:Lsp.Logger.Title.Debug ~section:"jsonrpc2"
-        "%s" s)
-      msg
 
   (* read a full message *)
   let read_msg (self:t) : (Jsonrpc.Message.either, exn) result IO.t =
@@ -133,7 +125,7 @@ module Make(IO : IO)
         end
     in
     let*? headers = read_headers [] in
-    log_lsp_ "headers: %a" Fmt.Dump.(list @@ pair string string) headers;
+    Log.debug (fun k->k "jsonrpc2: read headers: %a" Fmt.Dump.(list @@ pair string string) headers);
     let ok = match List.assoc "content-type" headers with
       | "utf8" | "utf-8" -> true
       | _ -> false
@@ -142,7 +134,7 @@ module Make(IO : IO)
     if ok then (
       match int_of_string (List.assoc "content-length" headers) with
       | n ->
-        log_lsp_ "read %d bytes..." n;
+        Log.debug (fun k->k "jsonrpc2: read %d bytes..." n);
         let buf = Bytes.make n '\000' in
         let*? () =
           try_ @@ fun () -> IO.read self.ic buf 0 n

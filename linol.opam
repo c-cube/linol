@@ -14,6 +14,7 @@ depends: [
   "dune" { >= "2.0" }
   "containers" { >= "3.0" & < "4.0" }
   "yojson" { >= "1.6" }
+  "logs"
   "lsp" { >= "1.4" & < "1.5" }
   "ocaml" { >= "4.08" }
   "odoc" { with-doc }
