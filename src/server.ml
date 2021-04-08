@@ -36,6 +36,9 @@ module Make(IO : IO) = struct
 
   (** A wrapper to more easily reply to notifications *)
   class notify_back ~notify_back ?version ?(uri:DocumentUri.t option) () = object
+    val mutable uri = uri
+    method set_uri u = uri <- Some u
+
     (** Send a log message to the editor *)
     method send_log_msg ~type_ msg : unit IO.t =
       let params = ShowMessageParams.create ~type_ ~message:msg in
