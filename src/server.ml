@@ -171,26 +171,38 @@ module Make(IO : IO) = struct
           self#on_req_initialize ~notify_back i
         | Lsp.Client_request.TextDocumentHover { textDocument; position } ->
           let uri = textDocument.uri in
-          let doc_st = Hashtbl.find docs uri in
-          let notify_back = new notify_back ~uri ~notify_back () in
-          self#on_req_hover ~notify_back ~uri ~pos:position doc_st
+          begin match Hashtbl.find_opt docs uri with
+            | None -> IO.return None
+            | Some doc_st ->
+              let notify_back = new notify_back ~uri ~notify_back () in
+              self#on_req_hover ~notify_back ~uri ~pos:position doc_st
+          end
         | Lsp.Client_request.TextDocumentCompletion { textDocument; position; context } ->
           let uri = textDocument.uri in
-          let doc_st = Hashtbl.find docs uri in
-          let notify_back = new notify_back ~uri ~notify_back () in
-          self#on_req_completion ~notify_back ~uri
-            ~pos:position ~ctx:context doc_st
+          begin match Hashtbl.find_opt docs uri with
+            | None -> IO.return None
+            | Some doc_st ->
+              let notify_back = new notify_back ~uri ~notify_back () in
+              self#on_req_completion ~notify_back ~uri
+                ~pos:position ~ctx:context doc_st
+          end
         | Lsp.Client_request.TextDocumentDefinition { textDocument; position } ->
           let uri = textDocument.uri in
           let notify_back = new notify_back ~uri ~notify_back () in
-          let doc_st = Hashtbl.find docs uri in
-          self#on_req_definition ~notify_back
-            ~uri ~pos:position doc_st
+          begin match Hashtbl.find_opt docs uri with
+            | None -> IO.return None
+            | Some doc_st ->
+              self#on_req_definition ~notify_back
+                ~uri ~pos:position doc_st
+          end
         | Lsp.Client_request.TextDocumentCodeLens {textDocument} ->
           let uri = textDocument.uri in
           let notify_back = new notify_back ~uri ~notify_back () in
-          let doc_st = Hashtbl.find docs uri in
-          self#on_req_code_lens ~notify_back ~uri doc_st
+          begin match Hashtbl.find_opt docs uri with
+            | None -> IO.return []
+            | Some doc_st ->
+              self#on_req_code_lens ~notify_back ~uri doc_st
+          end
         | Lsp.Client_request.TextDocumentCodeLensResolve cl ->
           let notify_back = new notify_back ~notify_back () in
           self#on_req_code_lens_resolve ~notify_back cl
@@ -270,9 +282,9 @@ module Make(IO : IO) = struct
           self#on_notif_doc_did_close ~notify_back doc
         | Lsp.Client_notification.TextDocumentDidChange {textDocument=doc; contentChanges=c} ->
           let notify_back = new notify_back ~uri:doc.uri ~notify_back () in
-          begin match Hashtbl.find docs doc.uri with
-            | exception Not_found -> IO.failwith "unknown document"
-            | st ->
+          begin match Hashtbl.find_opt docs doc.uri with
+            | None -> IO.failwith "unknown document"
+            | Some st ->
               let old_content = st.content in
               let new_doc: Lsp.Text_document.t =
                 let doc = Lsp.Text_document.make
