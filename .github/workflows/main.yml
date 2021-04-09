@@ -1,20 +1,77 @@
 name: build
-on: [push]
+
+# adapted from ocaml-containers and @fardale's hard work.
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
 jobs:
   run:
     name: Build
-    runs-on: ${{ matrix.operating-system }}
     strategy:
+      fail-fast: false
       matrix:
-        operating-system: [macos-latest, ubuntu-latest, windows-latest]
-        ocaml-version: [ '4.08.0' ]
+        os:
+            - macos-latest
+            - ubuntu-latest
+            - windows-latest
+        ocaml:
+            - '4.08.1'
+            - '4.12.0'
+
+    runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@master
-    - uses: avsm/setup-ocaml@master
-      with:
-        ocaml-version: ${{ matrix.ocaml-version }}
-    - run: opam pin -n .
-    - run: opam depext -yt linol linol-lwt
-    - run: opam install -t . --deps-only
-    - run: opam exec -- dune build
-    - run: opam exec -- dune runtest
+      - uses: haya14busa/action-cond@v1
+        id: path
+        with:
+          cond: ${{ matrix.os == 'windows-latest' }}
+          if_true: "D:\\cygwin\\home\\runneradmin\\.opam"
+          if_false: "~/.opam"
+
+      - name: Checkout code
+        uses: actions/checkout@main
+
+      - name: Cache opam
+        id: cache-opam
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.path.outputs.value }}
+          key: opam-${{ matrix.os }}-${{ matrix.ocaml }}
+
+      - name: Use OCaml ${{ matrix.ocaml }}
+        uses: avsm/setup-ocaml@v1
+        with:
+          ocaml-version: ${{ matrix.ocaml }}
+
+      - run: opam update -u
+        if: steps.cache-opam.outputs.cache-hit == 'true'
+
+      - run: opam pin -n .
+
+      - run: opam depext -yt linol linol-lwt
+
+      - run: opam install -t linol linol-lwt --deps-only
+        if: matrix.os == 'ubuntu-latest'
+
+      - run: |
+          opam install -t linol --deps-only
+          opam install linol-lwt --deps-only  # no test deps
+        if: matrix.os != 'ubuntu-latest'
+
+      - run: opam exec -- dune build
+
+      - run: opam exec -- dune runtest
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+
+      - run: opam exec -- dune runtest -j 1 -p linol # test only core on non-ubuntu platform
+        if: ${{ matrix.os != 'ubuntu-latest' }}
+
+      - name: Remove troublesome files for caching on windows
+        if: matrix.os == 'windows-latest'
+        run: |
+            if (Test-Path D:\\cygwin\\home\\runneradmin\\.opam\\ocaml-variants.${{ matrix.ocaml }}+mingw64c\\.opam-switch\\sources\\ocamlbuild.0.14.0\\examples\\){Remove-Item –path D:\\cygwin\\home\\runneradmin\\.opam\\ocaml-variants.${{ matrix.ocaml }}+mingw64c\\.opam-switch\\sources\\ocamlbuild.0.14.0\\examples\\ –recurse}
