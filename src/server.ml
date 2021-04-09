@@ -295,6 +295,7 @@ module Make(IO : IO) = struct
       begin match n with
         | Lsp.Client_notification.TextDocumentDidOpen
             {DidOpenTextDocumentParams.textDocument=doc} ->
+          Log.debug (fun k->k "notif: did open '%s'" doc.uri);
           let notify_back =
             new notify_back ~uri:doc.uri ~version:doc.version ~notify_back () in
           let st = {
@@ -303,37 +304,54 @@ module Make(IO : IO) = struct
           } in
           Hashtbl.replace docs doc.uri st;
           self#on_notif_doc_did_open ~notify_back doc ~content:st.content
+
         | Lsp.Client_notification.TextDocumentDidClose {textDocument=doc} ->
+          Log.debug (fun k->k "notif: did close '%s'" doc.uri);
           let notify_back = new notify_back ~uri:doc.uri ~notify_back () in
           self#on_notif_doc_did_close ~notify_back doc
+
         | Lsp.Client_notification.TextDocumentDidChange {textDocument=doc; contentChanges=c} ->
+          Log.debug (fun k->k "notif: did change '%s'" doc.uri);
           let notify_back = new notify_back ~uri:doc.uri ~notify_back () in
-          begin match Hashtbl.find_opt docs doc.uri with
+
+          let old_doc =
+            match Hashtbl.find_opt docs doc.uri with
             | None ->
+              (* WTF vscode. Well let's try and deal with it. *)
               Log.err (fun k->k "unknown document: '%s'" doc.uri);
-              IO.failwith "unknown document"
+              let version = CCOpt.get_or ~default:0 doc.version in
+
+              let languageId = "" in (* FIXME*)
+              Lsp.Text_document.make
+                (DidOpenTextDocumentParams.create
+                   ~textDocument:(
+                     TextDocumentItem.create ~languageId
+                       ~uri:doc.uri ~version ~text:""))
             | Some st ->
-              let old_content = st.content in
-              let new_doc: Lsp.Text_document.t =
-                let doc = Lsp.Text_document.make
-                    (DidOpenTextDocumentParams.create
-                       ~textDocument:(
-                         TextDocumentItem.create ~languageId:st.languageId
-                           ~uri:doc.uri ~version:st.version ~text:st.content))
-                in
-                List.fold_left
-                  (fun d ev -> Lsp.Text_document.apply_content_change d ev)
-                  doc c
-              in
-              let new_st = {
-                st with
-                content=Lsp.Text_document.text new_doc;
-                version=Lsp.Text_document.version new_doc;
-              } in
-              Hashtbl.replace docs doc.uri new_st;
-              self#on_notif_doc_did_change ~notify_back doc c ~old_content
-                ~new_content:new_st.content
-          end
+                Lsp.Text_document.make
+                  (DidOpenTextDocumentParams.create
+                     ~textDocument:(
+                       TextDocumentItem.create ~languageId:st.languageId
+                         ~uri:doc.uri ~version:st.version ~text:st.content))
+          in
+
+          let new_doc: Lsp.Text_document.t =
+            List.fold_left
+              (fun d ev -> Lsp.Text_document.apply_content_change d ev)
+              old_doc c
+          in
+
+          let new_st : doc_state = {
+            uri=doc.uri; languageId=Lsp.Text_document.languageId new_doc;
+            content=Lsp.Text_document.text new_doc;
+            version=Lsp.Text_document.version new_doc;
+          } in
+
+          Hashtbl.replace docs doc.uri new_st;
+          self#on_notif_doc_did_change ~notify_back doc c
+            ~old_content:(Lsp.Text_document.text old_doc)
+            ~new_content:new_st.content
+
         | Lsp.Client_notification.Exit -> _quit <- true; IO.return ()
         | Lsp.Client_notification.DidSaveTextDocument _
         | Lsp.Client_notification.WillSaveTextDocument _
