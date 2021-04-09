@@ -297,7 +297,9 @@ module Make(IO : IO) = struct
         | Lsp.Client_notification.TextDocumentDidChange {textDocument=doc; contentChanges=c} ->
           let notify_back = new notify_back ~uri:doc.uri ~notify_back () in
           begin match Hashtbl.find_opt docs doc.uri with
-            | None -> IO.failwith "unknown document"
+            | None ->
+              Log.err (fun k->k "unknown document: '%s'" doc.uri);
+              IO.failwith "unknown document"
             | Some st ->
               let old_content = st.content in
               let new_doc: Lsp.Text_document.t =

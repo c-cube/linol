@@ -144,6 +144,7 @@ module Make(IO : IO)
           try_ @@ fun () ->
           IO.return @@ J.from_string (Bytes.unsafe_to_string buf)
         in
+        Log.debug (fun k->k "got json %a" J.pp j);
         begin match Jsonrpc.Message.either_of_yojson j with
           | m -> IO.return @@ Ok m
           | exception _ ->
