@@ -97,7 +97,16 @@ module Make(IO : IO) = struct
     method config_code_lens_options : CodeLensOptions.t option = None
     (** @since NEXT_RELEASE *)
 
-    method config_code_action_provider : [`CodeActionOptions of CodeActionOptions.t | `Bool of bool] = `Bool false
+    method config_definition :
+      [`Bool of bool | `DefinitionOptions of DefinitionOptions.t ] option = None
+    (** @since NEXT_RELEASE *)
+
+    method config_hover :
+      [`Bool of bool | `HoverOptions of HoverOptions.t ] option = None
+    (** @since NEXT_RELEASE *)
+
+    method config_code_action_provider :
+      [`CodeActionOptions of CodeActionOptions.t | `Bool of bool] = `Bool false
     (** @since NEXT_RELEASE *)
 
     (** Modify capabilities before sending them back to the client.
@@ -115,7 +124,10 @@ module Make(IO : IO) = struct
         ServerCapabilities.create
           ?codeLensProvider:self#config_code_lens_options
           ~codeActionProvider:self#config_code_action_provider
-          ~executeCommandProvider:(ExecuteCommandOptions.create ~commands:self#config_list_commands ())
+          ~executeCommandProvider:(ExecuteCommandOptions.create
+                                     ~commands:self#config_list_commands ())
+          ?definitionProvider:self#config_definition
+          ?hoverProvider:self#config_hover
           ~textDocumentSync:(`TextDocumentSyncOptions sync_opts) ()
         |> self#config_modify_capabilities
       in
