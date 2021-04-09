@@ -86,6 +86,7 @@ module Make(IO : IO) = struct
     method on_request_unhandled
       : type r. notify_back:notify_back -> r Lsp.Client_request.t -> r IO.t
       = fun ~notify_back:_ _r ->
+        Log.debug (fun k->k "req: unhandled request");
         IO.failwith "TODO: handle this request"
 
     (** Parameter for how to synchronize content with the editor *)
@@ -164,11 +165,7 @@ module Make(IO : IO) = struct
     method on_request
     : type r. notify_back:_ -> r Lsp.Client_request.t -> r IO.t
     = fun ~notify_back (r:_ Lsp.Client_request.t) ->
-
-      Log.debug
-        (fun k->k "handle request : %a" Yojson.Safe.pp
-            (Lsp.Client_request.to_jsonrpc_request ~id:(Jsonrpc.Id.t_of_yojson `Null) r
-             |> Jsonrpc.Message.yojson_of_request));
+      Log.debug (fun k->k "handle request <opaque>");
 
       begin match r with
         | Lsp.Client_request.Shutdown ->
@@ -176,18 +173,24 @@ module Make(IO : IO) = struct
           _quit <- true; IO.return ()
 
         | Lsp.Client_request.Initialize i ->
+          Log.debug (fun k->k "req: initialize");
           let notify_back = new notify_back ~notify_back () in
           self#on_req_initialize ~notify_back i
+
         | Lsp.Client_request.TextDocumentHover { textDocument; position } ->
           let uri = textDocument.uri in
+          Log.debug (fun k->k "req: hover '%s'" uri);
+
           begin match Hashtbl.find_opt docs uri with
             | None -> IO.return None
             | Some doc_st ->
               let notify_back = new notify_back ~uri ~notify_back () in
               self#on_req_hover ~notify_back ~uri ~pos:position doc_st
           end
+
         | Lsp.Client_request.TextDocumentCompletion { textDocument; position; context } ->
           let uri = textDocument.uri in
+          Log.debug (fun k->k "req: complete '%s'" uri);
           begin match Hashtbl.find_opt docs uri with
             | None -> IO.return None
             | Some doc_st ->
@@ -197,25 +200,34 @@ module Make(IO : IO) = struct
           end
         | Lsp.Client_request.TextDocumentDefinition { textDocument; position } ->
           let uri = textDocument.uri in
+          Log.debug (fun k->k "req: definition '%s'" uri);
           let notify_back = new notify_back ~uri ~notify_back () in
+
           begin match Hashtbl.find_opt docs uri with
             | None -> IO.return None
             | Some doc_st ->
               self#on_req_definition ~notify_back
                 ~uri ~pos:position doc_st
           end
+
         | Lsp.Client_request.TextDocumentCodeLens {textDocument} ->
           let uri = textDocument.uri in
+          Log.debug (fun k->k "req: codelens '%s'" uri);
           let notify_back = new notify_back ~uri ~notify_back () in
+
           begin match Hashtbl.find_opt docs uri with
             | None -> IO.return []
             | Some doc_st ->
               self#on_req_code_lens ~notify_back ~uri doc_st
           end
+
         | Lsp.Client_request.TextDocumentCodeLensResolve cl ->
+          Log.debug (fun k->k "req: codelens resolve");
           let notify_back = new notify_back ~notify_back () in
           self#on_req_code_lens_resolve ~notify_back cl
+
         | Lsp.Client_request.ExecuteCommand { command; arguments } ->
+          Log.debug (fun k->k "req: execute command '%s'" command);
           let notify_back = new notify_back ~notify_back () in
           self#on_req_execute_command ~notify_back command arguments
 

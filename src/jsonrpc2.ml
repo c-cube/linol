@@ -144,10 +144,11 @@ module Make(IO : IO)
           try_ @@ fun () ->
           IO.return @@ J.from_string (Bytes.unsafe_to_string buf)
         in
-        Log.debug (fun k->k "got json %a" J.pp j);
+        Log.debug (fun k->k "got json %s" (J.to_string j));
         begin match Jsonrpc.Message.either_of_yojson j with
           | m -> IO.return @@ Ok m
           | exception _ ->
+            Log.err (fun k->k "cannot decode json message");
             IO.return (Error (E(ErrorCode.ParseError, "cannot decode json")))
         end
       | exception _ ->
