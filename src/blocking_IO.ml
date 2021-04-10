@@ -29,8 +29,6 @@ let catch f g =
   try f()
   with e -> g e
 
-let spf = Printf.sprintf
-
 let rec read ic buf i len =
   if len>0 then (
     let n = input ic buf i len in
