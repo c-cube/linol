@@ -105,6 +105,10 @@ module Make(IO : IO) = struct
       [`Bool of bool | `HoverOptions of HoverOptions.t ] option = None
     (** @since NEXT_RELEASE *)
 
+    method config_symbol :
+      [`Bool of bool | `DocumentSymbolOptions of DocumentSymbolOptions.t ] option = None
+    (** @since NEXT_RELEASE *)
+
     method config_code_action_provider :
       [`CodeActionOptions of CodeActionOptions.t | `Bool of bool] = `Bool false
     (** @since NEXT_RELEASE *)
@@ -128,6 +132,7 @@ module Make(IO : IO) = struct
                                      ~commands:self#config_list_commands ())
           ?definitionProvider:self#config_definition
           ?hoverProvider:self#config_hover
+          ?documentSymbolProvider:self#config_symbol
           ~textDocumentSync:(`TextDocumentSyncOptions sync_opts) ()
         |> self#config_modify_capabilities
       in
