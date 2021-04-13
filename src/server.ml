@@ -174,6 +174,13 @@ module Make(IO : IO) = struct
         (_c:string) (_args:Yojson.Safe.t list option) : Yojson.Safe.t IO.t =
       IO.return `Null
 
+    (** List symbols in this document.
+        @since NEXT_RELEASE *)
+    method on_req_symbol ~notify_back:_ ~uri:_
+        () : [ `DocumentSymbol of DocumentSymbol.t list
+             | `SymbolInformation of SymbolInformation.t list ] option IO.t =
+      IO.return None
+
     method on_request
     : type r. notify_back:_ -> r Lsp.Client_request.t -> r IO.t
     = fun ~notify_back (r:_ Lsp.Client_request.t) ->
@@ -243,13 +250,16 @@ module Make(IO : IO) = struct
           let notify_back = new notify_back ~notify_back () in
           self#on_req_execute_command ~notify_back command arguments
 
+        | Lsp.Client_request.DocumentSymbol { textDocument=d } ->
+          let notify_back = new notify_back ~notify_back () in
+          self#on_req_symbol ~notify_back ~uri:d.uri ()
+
         | Lsp.Client_request.TextDocumentDeclaration _
         | Lsp.Client_request.TextDocumentTypeDefinition _
         | Lsp.Client_request.TextDocumentPrepareRename _
         | Lsp.Client_request.TextDocumentRename _
         | Lsp.Client_request.TextDocumentLink _
         | Lsp.Client_request.TextDocumentLinkResolve _
-        | Lsp.Client_request.DocumentSymbol _
         | Lsp.Client_request.WorkspaceSymbol _
         | Lsp.Client_request.DebugEcho _
         | Lsp.Client_request.DebugTextDocumentGet _
