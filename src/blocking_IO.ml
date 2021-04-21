@@ -14,7 +14,7 @@ let fail = raise
 let stdin = stdin
 let stdout = stdout
 
-let spawn f =
+let default_spawn_ f =
   let run () =
     try f()
     with e ->
@@ -22,8 +22,13 @@ let spawn f =
         "uncaught exception in `spawn`:\n%s\n%!"
         (Printexc.to_string e));
       raise e
-in
+  in
   ignore (Thread.create run () : Thread.t)
+
+let spawn_ref_ = ref default_spawn_
+
+let set_spawn_function f = spawn_ref_ := f
+let spawn f = !spawn_ref_ f
 
 let catch f g =
   try f()
