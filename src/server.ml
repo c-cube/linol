@@ -9,9 +9,13 @@ type nonrec doc_state = {
   content: string;
 }
 
+(** {2 Request ID}
+
+    unique ID of a request, used by JSONRPC to map each request to its reply. *)
 module Req_id = struct
   type t = Jsonrpc.Id.t
 
+  (** String representation of the ID *)
   let to_string : t -> string = function
     | `String s -> s
     | `Int i -> string_of_int i
@@ -25,6 +29,7 @@ module Make(IO : IO) = struct
   module Range = Range
   module Diagnostic = Diagnostic
   module DiagnosticSeverity = DiagnosticSeverity
+  module Req_id = Req_id
 
   (** The server baseclass *)
   class virtual base_server = object
