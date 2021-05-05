@@ -114,27 +114,27 @@ module Make(IO : IO) = struct
           ~change:TextDocumentSyncKind.Incremental ~willSave:false ()
 
     method config_code_lens_options : CodeLensOptions.t option = None
-    (** @since NEXT_RELEASE *)
+    (** @since 0.3 *)
 
     method config_definition :
       [`Bool of bool | `DefinitionOptions of DefinitionOptions.t ] option = None
-    (** @since NEXT_RELEASE *)
+    (** @since 0.3 *)
 
     method config_hover :
       [`Bool of bool | `HoverOptions of HoverOptions.t ] option = None
-    (** @since NEXT_RELEASE *)
+    (** @since 0.3 *)
 
     method config_symbol :
       [`Bool of bool | `DocumentSymbolOptions of DocumentSymbolOptions.t ] option = None
-    (** @since NEXT_RELEASE *)
+    (** @since 0.3 *)
 
     method config_code_action_provider :
       [`CodeActionOptions of CodeActionOptions.t | `Bool of bool] = `Bool false
-    (** @since NEXT_RELEASE *)
+    (** @since 0.3 *)
 
     (** Modify capabilities before sending them back to the client.
         By default we just return them unmodified.
-        @since NEXT_RELEASE *)
+        @since 0.3 *)
     method config_modify_capabilities (c:ServerCapabilities.t) : ServerCapabilities.t = c
 
     (** List of commands available *)
@@ -175,31 +175,31 @@ module Make(IO : IO) = struct
       IO.return None
 
     (** List code lenses for the given document
-        @since NEXT_RELEASE *)
+        @since 0.3 *)
     method on_req_code_lens  ~notify_back:_ ~id:_ ~uri:_
         (_ : doc_state) : CodeLens.t list IO.t =
       IO.return []
 
     (** Code lens resolution, must return a code lens with non null "command"
-        @since NEXT_RELEASE *)
+        @since 0.3 *)
     method on_req_code_lens_resolve
         ~notify_back:(_:notify_back) ~id:_ (cl:CodeLens.t) : CodeLens.t IO.t =
       IO.return cl
 
     (** Code action.
-        @since NEXT_RELEASE *)
+        @since 0.3 *)
     method on_req_code_action ~notify_back:(_:notify_back) ~id:_ (_c:CodeActionParams.t)
       : CodeActionResult.t IO.t =
       IO.return None
 
     (** Execute a command with given arguments.
-        @since NEXT_RELEASE *)
+        @since 0.3 *)
     method on_req_execute_command ~notify_back:_ ~id:_
         (_c:string) (_args:Yojson.Safe.t list option) : Yojson.Safe.t IO.t =
       IO.return `Null
 
     (** List symbols in this document.
-        @since NEXT_RELEASE *)
+        @since 0.3 *)
     method on_req_symbol ~notify_back:_ ~id:_ ~uri:_
         () : [ `DocumentSymbol of DocumentSymbol.t list
              | `SymbolInformation of SymbolInformation.t list ] option IO.t =
