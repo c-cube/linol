@@ -53,14 +53,44 @@ module Make(IO : IO) = struct
   end
 
   (** A wrapper to more easily reply to notifications *)
-  class notify_back ~notify_back ?version ?(uri:DocumentUri.t option) () = object
+  class notify_back ~workDoneToken ~notify_back
+      ?version ?(uri:DocumentUri.t option) () =
+    let send_work_progress = match workDoneToken with
+      | None -> fun _ -> IO.return ()
+      | Some token ->
+        fun value ->
+        let params = Lsp.Types.ProgressParams.create ~token ~value in
+        notify_back (Lsp.Server_notification.WorkDoneProgress params)
+    in
+  object
     val mutable uri = uri
     method set_uri u = uri <- Some u
 
     (** Send a log message to the editor *)
     method send_log_msg ~type_ msg : unit IO.t =
-      let params = ShowMessageParams.create ~type_ ~message:msg in
+      let params = LogMessageParams.create ~type_ ~message:msg in
       notify_back (Lsp.Server_notification.LogMessage params)
+
+    (** Report beginning of progress for background work.
+        @since NEXT_RELEASE *)
+    method work_progress_begin ?percentage ~title ~message () : unit IO.t =
+      let progress = WorkDoneProgressBegin.create ~title ~message ?percentage () in
+      let value = Lsp.Server_notification.Progress.Begin progress in
+      send_work_progress value
+
+    (** Report progress.
+        @since NEXT_RELEASE *)
+    method work_progress_report ?percentage ~message () : unit IO.t =
+      let progress = WorkDoneProgressReport.create ~message ?percentage () in
+      let value = Lsp.Server_notification.Progress.Report progress in
+      send_work_progress value
+
+    (** Report end of progress for background work.
+        @since NEXT_RELEASE *)
+    method work_progress_end ~message () : unit IO.t =
+      let progress = WorkDoneProgressEnd.create ~message () in
+      let value = Lsp.Server_notification.Progress.End progress in
+      send_work_progress value
 
     (** Send diagnostics for the current document *)
     method send_diagnostic (l:Diagnostic.t list) : unit IO.t =
@@ -225,31 +255,33 @@ module Make(IO : IO) = struct
           let notify_back = new notify_back ~notify_back () in
           self#on_req_initialize ~notify_back i
 
-        | Lsp.Client_request.TextDocumentHover { textDocument; position } ->
+        | Lsp.Client_request.TextDocumentHover { textDocument; position; workDoneToken } ->
           let uri = textDocument.uri in
-          Log.debug (fun k->k "req: hover '%s'" uri);
+          Log.debug (fun k->k "req: hover '%s'" @@ DocumentUri.to_string uri);
 
           begin match Hashtbl.find_opt docs uri with
             | None -> IO.return None
             | Some doc_st ->
-              let notify_back = new notify_back ~uri ~notify_back () in
+              let notify_back = new notify_back ~workDoneToken ~uri ~notify_back () in
               self#on_req_hover ~notify_back ~id ~uri ~pos:position doc_st
           end
 
-        | Lsp.Client_request.TextDocumentCompletion { textDocument; position; context } ->
+        | Lsp.Client_request.TextDocumentCompletion {
+            textDocument; position; context; workDoneToken; partialResultToken=_ } ->
           let uri = textDocument.uri in
-          Log.debug (fun k->k "req: complete '%s'" uri);
+          Log.debug (fun k->k "req: complete '%s'" @@ DocumentUri.to_string uri);
           begin match Hashtbl.find_opt docs uri with
             | None -> IO.return None
             | Some doc_st ->
-              let notify_back = new notify_back ~uri ~notify_back () in
+              let notify_back = new notify_back ~workDoneToken ~uri ~notify_back () in
               self#on_req_completion ~notify_back ~id ~uri
                 ~pos:position ~ctx:context doc_st
           end
-        | Lsp.Client_request.TextDocumentDefinition { textDocument; position } ->
+        | Lsp.Client_request.TextDocumentDefinition {
+            textDocument; position; workDoneToken; partialResultToken=_; } ->
           let uri = textDocument.uri in
-          Log.debug (fun k->k "req: definition '%s'" uri);
-          let notify_back = new notify_back ~uri ~notify_back () in
+          Log.debug (fun k->k "req: definition '%s'" @@ DocumentUri.to_string uri);
+          let notify_back = new notify_back ~workDoneToken ~uri ~notify_back () in
 
           begin match Hashtbl.find_opt docs uri with
             | None -> IO.return None
@@ -258,10 +290,11 @@ module Make(IO : IO) = struct
                 ~uri ~pos:position doc_st
           end
 
-        | Lsp.Client_request.TextDocumentCodeLens {textDocument} ->
+        | Lsp.Client_request.TextDocumentCodeLens
+            {textDocument; workDoneToken; partialResultToken=_; } ->
           let uri = textDocument.uri in
-          Log.debug (fun k->k "req: codelens '%s'" uri);
-          let notify_back = new notify_back ~uri ~notify_back () in
+          Log.debug (fun k->k "req: codelens '%s'" @@ DocumentUri.to_string uri);
+          let notify_back = new notify_back ~uri ~notify_back ~workDoneToken () in
 
           begin match Hashtbl.find_opt docs uri with
             | None -> IO.return []
@@ -271,20 +304,21 @@ module Make(IO : IO) = struct
 
         | Lsp.Client_request.TextDocumentCodeLensResolve cl ->
           Log.debug (fun k->k "req: codelens resolve");
-          let notify_back = new notify_back ~notify_back () in
+          let notify_back = new notify_back ~notify_back ~workDoneToken:None () in
           self#on_req_code_lens_resolve ~notify_back ~id cl
 
-        | Lsp.Client_request.ExecuteCommand { command; arguments } ->
+        | Lsp.Client_request.ExecuteCommand { command; arguments; workDoneToken; } ->
           Log.debug (fun k->k "req: execute command '%s'" command);
-          let notify_back = new notify_back ~notify_back () in
+          let notify_back = new notify_back ~notify_back ~workDoneToken () in
           self#on_req_execute_command ~notify_back ~id command arguments
 
-        | Lsp.Client_request.DocumentSymbol { textDocument=d } ->
-          let notify_back = new notify_back ~notify_back () in
+        | Lsp.Client_request.DocumentSymbol
+            { textDocument=d; workDoneToken; partialResultToken=_ } ->
+          let notify_back = new notify_back ~notify_back ~workDoneToken () in
           self#on_req_symbol ~notify_back ~id ~uri:d.uri ()
 
         | Lsp.Client_request.CodeAction a ->
-          let notify_back = new notify_back ~notify_back () in
+          let notify_back = new notify_back ~notify_back ~workDoneToken:None () in
           self#on_req_code_action ~notify_back ~id a
 
         | Lsp.Client_request.TextDocumentDeclaration _
@@ -307,8 +341,15 @@ module Make(IO : IO) = struct
         | Lsp.Client_request.TextDocumentColorPresentation _
         | Lsp.Client_request.TextDocumentColor _
         | Lsp.Client_request.SelectionRange _
-        | Lsp.Client_request.UnknownRequest _ ->
-          let notify_back = new notify_back ~notify_back () in
+        | Lsp.Client_request.UnknownRequest _
+        | Lsp.Client_request.TextDocumentMoniker _
+        | Lsp.Client_request.CodeActionResolve _
+        | Lsp.Client_request.SemanticTokensDelta _
+        | Lsp.Client_request.SemanticTokensFull _
+        | Lsp.Client_request.SemanticTokensRange _
+        | Lsp.Client_request.LinkedEditingRange _
+          ->
+          let notify_back = new notify_back ~notify_back ~workDoneToken:None () in
           self#on_request_unhandled ~notify_back ~id r
       end
 
@@ -349,9 +390,10 @@ module Make(IO : IO) = struct
       begin match n with
         | Lsp.Client_notification.TextDocumentDidOpen
             {DidOpenTextDocumentParams.textDocument=doc} ->
-          Log.debug (fun k->k "notif: did open '%s'" doc.uri);
+          Log.debug (fun k->k "notif: did open '%s'" @@ DocumentUri.to_string doc.uri);
           let notify_back =
-            new notify_back ~uri:doc.uri ~version:doc.version ~notify_back () in
+            new notify_back ~uri:doc.uri ~workDoneToken:None
+              ~version:doc.version ~notify_back () in
           let st = {
             uri=doc.uri; version=doc.version; content=doc.text;
             languageId=doc.languageId;
@@ -360,20 +402,22 @@ module Make(IO : IO) = struct
           self#on_notif_doc_did_open ~notify_back doc ~content:st.content
 
         | Lsp.Client_notification.TextDocumentDidClose {textDocument=doc} ->
-          Log.debug (fun k->k "notif: did close '%s'" doc.uri);
-          let notify_back = new notify_back ~uri:doc.uri ~notify_back () in
+          Log.debug (fun k->k "notif: did close '%s'" @@ DocumentUri.to_string doc.uri);
+          let notify_back = new notify_back ~uri:doc.uri ~workDoneToken:None ~notify_back () in
           self#on_notif_doc_did_close ~notify_back doc
 
-        | Lsp.Client_notification.TextDocumentDidChange {textDocument=doc; contentChanges=c} ->
-          Log.debug (fun k->k "notif: did change '%s'" doc.uri);
-          let notify_back = new notify_back ~uri:doc.uri ~notify_back () in
+        | Lsp.Client_notification.TextDocumentDidChange
+            {textDocument=doc; contentChanges=c} ->
+          Log.debug (fun k->k "notif: did change '%s'" @@ DocumentUri.to_string doc.uri);
+          let notify_back =
+            new notify_back ~uri:doc.uri ~workDoneToken:None ~notify_back () in
 
           let old_doc =
             match Hashtbl.find_opt docs doc.uri with
             | None ->
               (* WTF vscode. Well let's try and deal with it. *)
-              Log.err (fun k->k "unknown document: '%s'" doc.uri);
-              let version = CCOpt.get_or ~default:0 doc.version in
+              Log.err (fun k->k "unknown document: '%s'" @@ DocumentUri.to_string doc.uri);
+              let version = doc.version in
 
               let languageId = "" in (* FIXME*)
               Lsp.Text_document.make
@@ -414,6 +458,8 @@ module Make(IO : IO) = struct
         | Lsp.Client_notification.Initialized
         | Lsp.Client_notification.Unknown_notification _
         | Lsp.Client_notification.CancelRequest _
+        | Lsp.Client_notification.WorkDoneProgressCancel _
+        | Lsp.Client_notification.SetTrace _ (* TODO: a method to setup debug level? *)
           ->
           let notify_back = new notify_back ~notify_back () in
           self#on_notification_unhandled ~notify_back n

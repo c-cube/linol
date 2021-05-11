@@ -44,7 +44,7 @@ module Make(IO : IO)
 
   let spf = Printf.sprintf
 
-  module ErrorCode = Lsp.Types.ErrorCodes
+  module ErrorCode = Jsonrpc.Response.Error.Code
   (*
   module Err = struct
     type code = int
@@ -187,10 +187,9 @@ module Make(IO : IO)
                       let msg = Lsp.Server_notification.to_jsonrpc n in
                       send_server_notif self msg))
               (fun e ->
-                 let msg =
-                   Lsp.Types.ShowMessageParams.create ~type_:Lsp.Types.MessageType.Error
-                     ~message:(Printexc.to_string e)
-                 in
+                 let message = Printexc.to_string e in
+                 let msg = Lsp.Types.LogMessageParams.create ~message
+                     ~type_:Lsp.Types.MessageType.Error in
                  let msg =
                    Lsp.Server_notification.LogMessage msg
                    |> Lsp.Server_notification.to_jsonrpc
