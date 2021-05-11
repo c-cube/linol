@@ -2,7 +2,6 @@
 (** {1 Simple JSON-RPC2 implementation}
     See {{: https://www.jsonrpc.org/specification} the spec} *)
 
-module Fmt = CCFormat
 module J = Yojson.Safe
 module Err = Jsonrpc.Response.Error
 
@@ -125,7 +124,9 @@ module Make(IO : IO)
         end
     in
     let*? headers = read_headers [] in
-    Log.debug (fun k->k "jsonrpc2: read headers: %a" Fmt.Dump.(list @@ pair string string) headers);
+    Log.debug (fun k->k "jsonrpc2: read headers: [%s]"
+                  (String.concat ";" @@
+                   List.map (fun (a,b)->Printf.sprintf "(%S,%S)" a b) headers));
     let ok = match List.assoc "content-type" headers with
       | "utf8" | "utf-8" -> true
       | _ -> false
