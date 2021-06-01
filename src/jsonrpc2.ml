@@ -167,6 +167,7 @@ module Make(IO : IO)
         IO.catch f
           (fun e ->
              let message = spf "%s\n%s" (Printexc.to_string e) (Printexc.get_backtrace()) in
+             Log.err (fun k->k "error: %s" msg);
              let r = Jsonrpc.Response.error id
                (Jsonrpc.Response.Error.make
                  ~code:Jsonrpc.Response.Error.Code.InternalError
@@ -219,6 +220,7 @@ module Make(IO : IO)
             end)
           (fun e ->
             let message = spf "%s\n%s" (Printexc.to_string e) (Printexc.get_backtrace()) in
+            Log.err (fun k->k "error: %s" msg);
             let r =
               Jsonrpc.Response.error id
               (Jsonrpc.Response.Error.make
