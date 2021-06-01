@@ -373,7 +373,7 @@ module Make(IO : IO) = struct
             | None ->
               (* WTF vscode. Well let's try and deal with it. *)
               Log.err (fun k->k "unknown document: '%s'" doc.uri);
-              let version = CCOpt.get_or ~default:0 doc.version in
+              let version = match doc.version with Some x->x | None -> 0 in
 
               let languageId = "" in (* FIXME*)
               Lsp.Text_document.make
