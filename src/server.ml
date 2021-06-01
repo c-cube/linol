@@ -342,10 +342,6 @@ module Make(IO : IO) = struct
         ~notify_back (n:Lsp.Client_notification.t) : unit IO.t =
       let open Lsp.Types in
 
-      Log.debug
-        (fun k->k "handle notification: %a" Yojson.Safe.pp
-            (Lsp.Client_notification.to_jsonrpc n |> Jsonrpc.Message.yojson_of_notification));
-
       begin match n with
         | Lsp.Client_notification.TextDocumentDidOpen
             {DidOpenTextDocumentParams.textDocument=doc} ->
