@@ -13,8 +13,8 @@ build: [
 depends: [
   "dune" { >= "2.0" }
   "linol" { = version }
-  "lsp" { >= "1.6" & < "1.7" }
-  "jsonrpc" { >= "1.6" & < "1.7" }
+  "lsp" { >= "1.4" & < "1.6" }
+  "jsonrpc" { >= "1.4" & < "1.6" }
   "lwt" { >= "5.1" & < "6.0" }
   "base-unix"
   "yojson" { >= "1.6" }
