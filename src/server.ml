@@ -113,6 +113,10 @@ module Make(IO : IO) = struct
       TextDocumentSyncOptions.create
           ~change:TextDocumentSyncKind.Incremental ~willSave:false ()
 
+    method config_completion : CompletionOptions.t option = None
+    (** Configuration for the completion API.
+        @since 0.4 *)
+
     method config_code_lens_options : CodeLensOptions.t option = None
     (** @since 0.3 *)
 
@@ -149,6 +153,7 @@ module Make(IO : IO) = struct
           ~codeActionProvider:self#config_code_action_provider
           ~executeCommandProvider:(ExecuteCommandOptions.create
                                      ~commands:self#config_list_commands ())
+          ?completionProvider:self#config_completion
           ?definitionProvider:self#config_definition
           ?hoverProvider:self#config_hover
           ?documentSymbolProvider:self#config_symbol
