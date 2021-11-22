@@ -111,7 +111,9 @@ module Make(IO : IO) = struct
     (** Parameter for how to synchronize content with the editor *)
     method config_sync_opts : TextDocumentSyncOptions.t =
       TextDocumentSyncOptions.create
-          ~change:TextDocumentSyncKind.Incremental ~willSave:false ()
+        ~change:TextDocumentSyncKind.Incremental ~openClose:true
+        ~save:(SaveOptions.create ~includeText:false ())
+        ~willSave:false ()
 
     method config_completion : CompletionOptions.t option = None
     (** Configuration for the completion API.
