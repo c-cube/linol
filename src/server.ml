@@ -59,7 +59,7 @@ module Make(IO : IO) = struct
 
     (** Send a log message to the editor *)
     method send_log_msg ~type_ msg : unit IO.t =
-      let params = ShowMessageParams.create ~type_ ~message:msg in
+      let params = LogMessageParams.create ~type_ ~message:msg in
       notify_back (Lsp.Server_notification.LogMessage params)
 
     (** Send diagnostics for the current document *)
@@ -112,7 +112,7 @@ module Make(IO : IO) = struct
     method config_sync_opts : TextDocumentSyncOptions.t =
       TextDocumentSyncOptions.create
         ~change:TextDocumentSyncKind.Incremental ~openClose:true
-        ~save:(SaveOptions.create ~includeText:false ())
+        ~save:(`SaveOptions (SaveOptions.create ~includeText:false ()))
         ~willSave:false ()
 
     method config_completion : CompletionOptions.t option = None
@@ -229,7 +229,7 @@ module Make(IO : IO) = struct
 
         | Lsp.Client_request.TextDocumentHover { textDocument; position } ->
           let uri = textDocument.uri in
-          Log.debug (fun k->k "req: hover '%s'" uri);
+          Log.debug (fun k->k "req: hover '%s'" (DocumentUri.to_path uri));
 
           begin match Hashtbl.find_opt docs uri with
             | None -> IO.return None
@@ -240,7 +240,7 @@ module Make(IO : IO) = struct
 
         | Lsp.Client_request.TextDocumentCompletion { textDocument; position; context } ->
           let uri = textDocument.uri in
-          Log.debug (fun k->k "req: complete '%s'" uri);
+          Log.debug (fun k->k "req: complete '%s'" (DocumentUri.to_path uri));
           begin match Hashtbl.find_opt docs uri with
             | None -> IO.return None
             | Some doc_st ->
@@ -250,7 +250,7 @@ module Make(IO : IO) = struct
           end
         | Lsp.Client_request.TextDocumentDefinition { textDocument; position } ->
           let uri = textDocument.uri in
-          Log.debug (fun k->k "req: definition '%s'" uri);
+          Log.debug (fun k->k "req: definition '%s'" (DocumentUri.to_path uri));
           let notify_back = new notify_back ~uri ~notify_back () in
 
           begin match Hashtbl.find_opt docs uri with
@@ -262,7 +262,7 @@ module Make(IO : IO) = struct
 
         | Lsp.Client_request.TextDocumentCodeLens {textDocument} ->
           let uri = textDocument.uri in
-          Log.debug (fun k->k "req: codelens '%s'" uri);
+          Log.debug (fun k->k "req: codelens '%s'" (DocumentUri.to_path uri));
           let notify_back = new notify_back ~uri ~notify_back () in
 
           begin match Hashtbl.find_opt docs uri with
@@ -288,7 +288,8 @@ module Make(IO : IO) = struct
         | Lsp.Client_request.CodeAction a ->
           let notify_back = new notify_back ~notify_back () in
           self#on_req_code_action ~notify_back ~id a
-
+        | Lsp.Client_request.CodeActionResolve _
+        | Lsp.Client_request.LinkedEditingRange _
         | Lsp.Client_request.TextDocumentDeclaration _
         | Lsp.Client_request.TextDocumentTypeDefinition _
         | Lsp.Client_request.TextDocumentPrepareRename _
@@ -305,10 +306,14 @@ module Make(IO : IO) = struct
         | Lsp.Client_request.CompletionItemResolve _
         | Lsp.Client_request.WillSaveWaitUntilTextDocument _
         | Lsp.Client_request.TextDocumentFormatting _
+        | Lsp.Client_request.TextDocumentMoniker _
         | Lsp.Client_request.TextDocumentOnTypeFormatting _
         | Lsp.Client_request.TextDocumentColorPresentation _
         | Lsp.Client_request.TextDocumentColor _
         | Lsp.Client_request.SelectionRange _
+        | Lsp.Client_request.SemanticTokensDelta _
+        | Lsp.Client_request.SemanticTokensFull _
+        | Lsp.Client_request.SemanticTokensRange _
         | Lsp.Client_request.UnknownRequest _ ->
           let notify_back = new notify_back ~notify_back () in
           self#on_request_unhandled ~notify_back ~id r
@@ -347,7 +352,7 @@ module Make(IO : IO) = struct
       begin match n with
         | Lsp.Client_notification.TextDocumentDidOpen
             {DidOpenTextDocumentParams.textDocument=doc} ->
-          Log.debug (fun k->k "notif: did open '%s'" doc.uri);
+          Log.debug (fun k->k "notif: did open '%s'" (DocumentUri.to_path doc.uri));
           let notify_back =
             new notify_back ~uri:doc.uri ~version:doc.version ~notify_back () in
           let st = {
@@ -358,20 +363,20 @@ module Make(IO : IO) = struct
           self#on_notif_doc_did_open ~notify_back doc ~content:st.content
 
         | Lsp.Client_notification.TextDocumentDidClose {textDocument=doc} ->
-          Log.debug (fun k->k "notif: did close '%s'" doc.uri);
+          Log.debug (fun k->k "notif: did close '%s'" (DocumentUri.to_path doc.uri));
           let notify_back = new notify_back ~uri:doc.uri ~notify_back () in
           self#on_notif_doc_did_close ~notify_back doc
 
         | Lsp.Client_notification.TextDocumentDidChange {textDocument=doc; contentChanges=c} ->
-          Log.debug (fun k->k "notif: did change '%s'" doc.uri);
+          Log.debug (fun k->k "notif: did change '%s'" (DocumentUri.to_path doc.uri));
           let notify_back = new notify_back ~uri:doc.uri ~notify_back () in
 
           let old_doc =
             match Hashtbl.find_opt docs doc.uri with
             | None ->
               (* WTF vscode. Well let's try and deal with it. *)
-              Log.err (fun k->k "unknown document: '%s'" doc.uri);
-              let version = match doc.version with Some x->x | None -> 0 in
+              Log.err (fun k->k "unknown document: '%s'" (DocumentUri.to_path doc.uri));
+              let version =  doc.version in
 
               let languageId = "" in (* FIXME*)
               Lsp.Text_document.make
@@ -412,6 +417,8 @@ module Make(IO : IO) = struct
         | Lsp.Client_notification.Initialized
         | Lsp.Client_notification.Unknown_notification _
         | Lsp.Client_notification.CancelRequest _
+        | Lsp.Client_notification.WorkDoneProgressCancel _
+        | Lsp.Client_notification.SetTrace _
           ->
           let notify_back = new notify_back ~notify_back () in
           self#on_notification_unhandled ~notify_back n

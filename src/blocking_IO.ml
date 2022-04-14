@@ -23,7 +23,7 @@ let default_spawn_ f =
         (Printexc.to_string e));
       raise e
   in
-  ignore (Thread.create run () : Thread.t)
+  ignore (Thread.create run ())
 
 let spawn_ref_ = ref default_spawn_
 
