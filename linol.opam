@@ -15,7 +15,7 @@ depends: [
   "yojson" { >= "1.6" }
   "logs"
   "lsp" { >= "1.11" & < "1.12" }
-  "ocaml" { >= "4.08" }
+  "ocaml" { >= "4.12" }
   "odoc" { with-doc }
 ]
 tags: [ "lsp" "server" "lwt" ]

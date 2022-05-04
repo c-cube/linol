@@ -165,12 +165,13 @@ module Make(IO : IO) = struct
       IO.return @@ InitializeResult.create ~capabilities ()
 
     (** Called when the user hovers on some identifier in the document *)
-    method on_req_hover ~notify_back:_ ~id:_ ~uri:_ ~pos:_
+    method on_req_hover ~notify_back:_ ~id:_ ~uri:_ ~pos:_ ~workDoneToken:_
         (_ : doc_state) : Hover.t option IO.t =
       IO.return None
 
     (** Called when the user requests completion in the document *)
     method on_req_completion  ~notify_back:_ ~id:_ ~uri:_ ~pos:_ ~ctx:_
+        ~workDoneToken:_ ~partialResultToken:_
         (_ : doc_state) :
           [ `CompletionList of CompletionList.t
           | `List of CompletionItem.t list ] option IO.t =
@@ -178,36 +179,41 @@ module Make(IO : IO) = struct
 
     (** Called when the user wants to jump-to-definition  *)
     method on_req_definition  ~notify_back:_ ~id:_ ~uri:_ ~pos:_
+        ~workDoneToken:_ ~partialResultToken:_
         (_ : doc_state) : Locations.t option IO.t =
       IO.return None
 
     (** List code lenses for the given document
         @since 0.3 *)
     method on_req_code_lens  ~notify_back:_ ~id:_ ~uri:_
+        ~workDoneToken:_ ~partialResultToken:_
         (_ : doc_state) : CodeLens.t list IO.t =
       IO.return []
 
     (** Code lens resolution, must return a code lens with non null "command"
         @since 0.3 *)
     method on_req_code_lens_resolve
-        ~notify_back:(_:notify_back) ~id:_ (cl:CodeLens.t) : CodeLens.t IO.t =
+        ~notify_back:(_:notify_back) ~id:_
+        (cl:CodeLens.t) : CodeLens.t IO.t =
       IO.return cl
 
     (** Code action.
         @since 0.3 *)
-    method on_req_code_action ~notify_back:(_:notify_back) ~id:_ (_c:CodeActionParams.t)
+    method on_req_code_action ~notify_back:(_:notify_back) ~id:_
+        (_c:CodeActionParams.t)
       : CodeActionResult.t IO.t =
       IO.return None
 
     (** Execute a command with given arguments.
         @since 0.3 *)
-    method on_req_execute_command ~notify_back:_ ~id:_
+    method on_req_execute_command ~notify_back:_ ~id:_ ~workDoneToken:_
         (_c:string) (_args:Yojson.Safe.t list option) : Yojson.Safe.t IO.t =
       IO.return `Null
 
     (** List symbols in this document.
         @since 0.3 *)
     method on_req_symbol ~notify_back:_ ~id:_ ~uri:_
+        ~workDoneToken:_ ~partialResultToken:_
         () : [ `DocumentSymbol of DocumentSymbol.t list
              | `SymbolInformation of SymbolInformation.t list ] option IO.t =
       IO.return None
@@ -227,7 +233,7 @@ module Make(IO : IO) = struct
           let notify_back = new notify_back ~notify_back () in
           self#on_req_initialize ~notify_back i
 
-        | Lsp.Client_request.TextDocumentHover { textDocument; position } ->
+        | Lsp.Client_request.TextDocumentHover { textDocument; position; workDoneToken } ->
           let uri = textDocument.uri in
           Log.debug (fun k->k "req: hover '%s'" (DocumentUri.to_path uri));
 
@@ -235,10 +241,12 @@ module Make(IO : IO) = struct
             | None -> IO.return None
             | Some doc_st ->
               let notify_back = new notify_back ~uri ~notify_back () in
-              self#on_req_hover ~notify_back ~id ~uri ~pos:position doc_st
+              self#on_req_hover ~notify_back ~id ~uri ~pos:position ~workDoneToken doc_st
           end
 
-        | Lsp.Client_request.TextDocumentCompletion { textDocument; position; context } ->
+        | Lsp.Client_request.TextDocumentCompletion {
+            textDocument; position; context; workDoneToken; partialResultToken;
+          } ->
           let uri = textDocument.uri in
           Log.debug (fun k->k "req: complete '%s'" (DocumentUri.to_path uri));
           begin match Hashtbl.find_opt docs uri with
@@ -246,9 +254,12 @@ module Make(IO : IO) = struct
             | Some doc_st ->
               let notify_back = new notify_back ~uri ~notify_back () in
               self#on_req_completion ~notify_back ~id ~uri
+                ~workDoneToken ~partialResultToken
                 ~pos:position ~ctx:context doc_st
           end
-        | Lsp.Client_request.TextDocumentDefinition { textDocument; position } ->
+        | Lsp.Client_request.TextDocumentDefinition {
+            textDocument; position; workDoneToken; partialResultToken;
+          } ->
           let uri = textDocument.uri in
           Log.debug (fun k->k "req: definition '%s'" (DocumentUri.to_path uri));
           let notify_back = new notify_back ~uri ~notify_back () in
@@ -257,10 +268,13 @@ module Make(IO : IO) = struct
             | None -> IO.return None
             | Some doc_st ->
               self#on_req_definition ~notify_back ~id
+                ~workDoneToken ~partialResultToken
                 ~uri ~pos:position doc_st
           end
 
-        | Lsp.Client_request.TextDocumentCodeLens {textDocument} ->
+        | Lsp.Client_request.TextDocumentCodeLens {
+            textDocument; workDoneToken; partialResultToken;
+          } ->
           let uri = textDocument.uri in
           Log.debug (fun k->k "req: codelens '%s'" (DocumentUri.to_path uri));
           let notify_back = new notify_back ~uri ~notify_back () in
@@ -268,7 +282,8 @@ module Make(IO : IO) = struct
           begin match Hashtbl.find_opt docs uri with
             | None -> IO.return []
             | Some doc_st ->
-              self#on_req_code_lens ~notify_back ~id ~uri doc_st
+              self#on_req_code_lens ~notify_back ~id ~uri
+                ~workDoneToken ~partialResultToken doc_st
           end
 
         | Lsp.Client_request.TextDocumentCodeLensResolve cl ->
@@ -276,14 +291,15 @@ module Make(IO : IO) = struct
           let notify_back = new notify_back ~notify_back () in
           self#on_req_code_lens_resolve ~notify_back ~id cl
 
-        | Lsp.Client_request.ExecuteCommand { command; arguments } ->
+        | Lsp.Client_request.ExecuteCommand { command; arguments; workDoneToken } ->
           Log.debug (fun k->k "req: execute command '%s'" command);
           let notify_back = new notify_back ~notify_back () in
-          self#on_req_execute_command ~notify_back ~id command arguments
+          self#on_req_execute_command ~notify_back ~id ~workDoneToken command arguments
 
-        | Lsp.Client_request.DocumentSymbol { textDocument=d } ->
+        | Lsp.Client_request.DocumentSymbol { textDocument=d; workDoneToken; partialResultToken } ->
           let notify_back = new notify_back ~notify_back () in
-          self#on_req_symbol ~notify_back ~id ~uri:d.uri ()
+          self#on_req_symbol ~notify_back ~id ~uri:d.uri
+            ~workDoneToken ~partialResultToken ()
 
         | Lsp.Client_request.CodeAction a ->
           let notify_back = new notify_back ~notify_back () in
