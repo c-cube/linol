@@ -431,7 +431,7 @@ module Make(IO : IO) = struct
         | Lsp.Client_notification.ChangeWorkspaceFolders _
         | Lsp.Client_notification.ChangeConfiguration _
         | Lsp.Client_notification.Initialized
-        | Lsp.Client_notification.Unknown_notification _
+        | Lsp.Client_notification.UnknownNotification _
         | Lsp.Client_notification.CancelRequest _
         | Lsp.Client_notification.WorkDoneProgressCancel _
         | Lsp.Client_notification.SetTrace _
