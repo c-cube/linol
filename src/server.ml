@@ -29,17 +29,32 @@ module Make (IO : IO) = struct
   module DiagnosticSeverity = DiagnosticSeverity
   module Req_id = Req_id
 
+  (** A variant carrying a [Lsp.Server_request.t] and a handler for its return
+      value. The request is stored in order to allow us to discriminate its
+      existential variable. *)
+  type server_request_handler_pair =
+    | Request_and_handler :
+        'from_server Lsp.Server_request.t
+        * (('from_server, Jsonrpc.Response.Error.t) result -> unit IO.t)
+        -> server_request_handler_pair
+
+  type send_request = server_request_handler_pair -> Req_id.t IO.t
+  (** The type of the action that sends a request from the server to the client
+      and handles its response. *)
+
   (** The server baseclass *)
   class virtual base_server =
     object
       method virtual on_notification
           : notify_back:(Lsp.Server_notification.t -> unit IO.t) ->
+            server_request:send_request ->
             Lsp.Client_notification.t ->
             unit IO.t
 
       method virtual on_request
           : 'a.
             notify_back:(Lsp.Server_notification.t -> unit IO.t) ->
+            server_request:send_request ->
             id:Req_id.t ->
             'a Lsp.Client_request.t ->
             'a IO.t
@@ -53,8 +68,8 @@ module Make (IO : IO) = struct
     end
 
   (** A wrapper to more easily reply to notifications *)
-  class notify_back ~notify_back ~workDoneToken ~partialResultToken:_ ?version
-    ?(uri : DocumentUri.t option) () =
+  class notify_back ~notify_back ~server_request ~workDoneToken
+    ~partialResultToken:_ ?version ?(uri : DocumentUri.t option) () =
     object
       val mutable uri = uri
       method set_uri u = uri <- Some u
@@ -109,7 +124,15 @@ module Make (IO : IO) = struct
         | None -> IO.return ()
 
       method send_notification (n : Lsp.Server_notification.t) = notify_back n
-      (** Send a notification (general purpose method) *)
+      (** Send a notification from the server to the client (general purpose method) *)
+
+      method send_request
+          : 'from_server.
+            'from_server Lsp.Server_request.t ->
+            (('from_server, Jsonrpc.Response.Error.t) result -> unit IO.t) ->
+            Req_id.t IO.t =
+        fun r h -> server_request @@ Request_and_handler (r, h)
+      (** Send a request from the server to the client (general purpose method) *)
     end
 
   type nonrec doc_state = doc_state = {
@@ -271,8 +294,12 @@ module Make (IO : IO) = struct
         @since 0.3 *)
 
       method on_request : type r.
-          notify_back:_ -> id:Req_id.t -> r Lsp.Client_request.t -> r IO.t =
-        fun ~notify_back ~id (r : _ Lsp.Client_request.t) ->
+          notify_back:_ ->
+          server_request:_ ->
+          id:Req_id.t ->
+          r Lsp.Client_request.t ->
+          r IO.t =
+        fun ~notify_back ~server_request ~id (r : _ Lsp.Client_request.t) ->
           Log.debug (fun k ->
               k "handle request[id=%s] <opaque>" (Req_id.to_string id));
 
@@ -286,7 +313,7 @@ module Make (IO : IO) = struct
             let notify_back =
               new notify_back
                 ~partialResultToken:None ~workDoneToken:i.workDoneToken
-                ~notify_back ()
+                ~notify_back ~server_request ()
             in
             self#on_req_initialize ~notify_back i
           | Lsp.Client_request.TextDocumentHover
@@ -299,7 +326,8 @@ module Make (IO : IO) = struct
             | Some doc_st ->
               let notify_back =
                 new notify_back
-                  ~workDoneToken ~partialResultToken:None ~uri ~notify_back ()
+                  ~workDoneToken ~partialResultToken:None ~uri ~notify_back
+                  ~server_request ()
               in
               self#on_req_hover ~notify_back ~id ~uri ~pos:position
                 ~workDoneToken doc_st)
@@ -319,7 +347,8 @@ module Make (IO : IO) = struct
             | Some doc_st ->
               let notify_back =
                 new notify_back
-                  ~partialResultToken ~workDoneToken ~uri ~notify_back ()
+                  ~partialResultToken ~workDoneToken ~uri ~notify_back
+                  ~server_request ()
               in
               self#on_req_completion ~notify_back ~id ~uri ~workDoneToken
                 ~partialResultToken ~pos:position ~ctx:context doc_st)
@@ -330,7 +359,8 @@ module Make (IO : IO) = struct
                 k "req: definition '%s'" (DocumentUri.to_path uri));
             let notify_back =
               new notify_back
-                ~workDoneToken ~partialResultToken ~uri ~notify_back ()
+                ~workDoneToken ~partialResultToken ~uri ~notify_back
+                ~server_request ()
             in
 
             (match Hashtbl.find_opt docs uri with
@@ -345,7 +375,8 @@ module Make (IO : IO) = struct
                 k "req: codelens '%s'" (DocumentUri.to_path uri));
             let notify_back =
               new notify_back
-                ~workDoneToken ~partialResultToken ~uri ~notify_back ()
+                ~workDoneToken ~partialResultToken ~uri ~notify_back
+                ~server_request ()
             in
 
             (match Hashtbl.find_opt docs uri with
@@ -357,7 +388,8 @@ module Make (IO : IO) = struct
             Log.debug (fun k -> k "req: codelens resolve");
             let notify_back =
               new notify_back
-                ~workDoneToken:None ~partialResultToken:None ~notify_back ()
+                ~workDoneToken:None ~partialResultToken:None ~notify_back
+                ~server_request ()
             in
             self#on_req_code_lens_resolve ~notify_back ~id cl
           | Lsp.Client_request.ExecuteCommand
@@ -365,14 +397,17 @@ module Make (IO : IO) = struct
             Log.debug (fun k -> k "req: execute command '%s'" command);
             let notify_back =
               new notify_back
-                ~workDoneToken ~partialResultToken:None ~notify_back ()
+                ~workDoneToken ~partialResultToken:None ~notify_back
+                ~server_request ()
             in
             self#on_req_execute_command ~notify_back ~id ~workDoneToken command
               arguments
           | Lsp.Client_request.DocumentSymbol
               { textDocument = d; workDoneToken; partialResultToken } ->
             let notify_back =
-              new notify_back ~workDoneToken ~partialResultToken ~notify_back ()
+              new notify_back
+                ~workDoneToken ~partialResultToken ~notify_back ~server_request
+                ()
             in
             self#on_req_symbol ~notify_back ~id ~uri:d.uri ~workDoneToken
               ~partialResultToken ()
@@ -380,7 +415,8 @@ module Make (IO : IO) = struct
             let notify_back =
               new notify_back
                 ~workDoneToken:a.workDoneToken
-                ~partialResultToken:a.partialResultToken ~notify_back ()
+                ~partialResultToken:a.partialResultToken ~notify_back
+                ~server_request ()
             in
             self#on_req_code_action ~notify_back ~id a
           | Lsp.Client_request.CodeActionResolve _
@@ -420,7 +456,8 @@ module Make (IO : IO) = struct
           | Lsp.Client_request.UnknownRequest _ ->
             let notify_back =
               new notify_back
-                ~workDoneToken:None ~partialResultToken:None ~notify_back ()
+                ~workDoneToken:None ~partialResultToken:None ~notify_back
+                ~server_request ()
             in
             self#on_request_unhandled ~notify_back ~id r
 
@@ -448,8 +485,8 @@ module Make (IO : IO) = struct
         IO.return ()
       (** Override to handle unprocessed notifications *)
 
-      method on_notification ~notify_back (n : Lsp.Client_notification.t)
-          : unit IO.t =
+      method on_notification ~notify_back ~server_request
+          (n : Lsp.Client_notification.t) : unit IO.t =
         let open Lsp.Types in
         match n with
         | Lsp.Client_notification.TextDocumentDidOpen
@@ -459,7 +496,7 @@ module Make (IO : IO) = struct
           let notify_back =
             new notify_back
               ~uri:doc.uri ~workDoneToken:None ~partialResultToken:None
-              ~version:doc.version ~notify_back ()
+              ~version:doc.version ~notify_back ~server_request ()
           in
           let st =
             {
@@ -479,7 +516,7 @@ module Make (IO : IO) = struct
           let notify_back =
             new notify_back
               ~workDoneToken:None ~partialResultToken:None ~uri:doc.uri
-              ~notify_back ()
+              ~notify_back ~server_request ()
           in
           self#on_notif_doc_did_close
             ~notify_back:(notify_back : notify_back)
@@ -491,7 +528,7 @@ module Make (IO : IO) = struct
           let notify_back =
             new notify_back
               ~workDoneToken:None ~partialResultToken:None ~uri:doc.uri
-              ~notify_back ()
+              ~notify_back ~server_request ()
           in
 
           let old_doc =
@@ -557,7 +594,8 @@ module Make (IO : IO) = struct
         | Lsp.Client_notification.LogTrace _ ->
           let notify_back =
             new notify_back
-              ~workDoneToken:None ~partialResultToken:None ~notify_back ()
+              ~workDoneToken:None ~partialResultToken:None ~notify_back
+              ~server_request ()
           in
           self#on_notification_unhandled
             ~notify_back:(notify_back : notify_back)
