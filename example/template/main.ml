@@ -20,9 +20,9 @@ type state_after_processing = unit
 let process_some_input_file (_file_contents : string) : state_after_processing =
   ()
 
-let diagnostics (_state : state_after_processing) : Lsp.Types.Diagnostic.t list =
+let diagnostics (_state : state_after_processing) : Lsp.Types.Diagnostic.t list
+    =
   []
-
 
 (* Lsp server class
 
@@ -36,21 +36,20 @@ let diagnostics (_state : state_after_processing) : Lsp.Types.Diagnostic.t list 
    actually meaningfully interpret and respond to.
 *)
 class lsp_server =
-  object(self)
+  object (self)
     inherit Linol_lwt.Jsonrpc2.server
 
     (* one env per document *)
-    val buffers: (Lsp.Types.DocumentUri.t, state_after_processing) Hashtbl.t
-      = Hashtbl.create 32
+    val buffers : (Lsp.Types.DocumentUri.t, state_after_processing) Hashtbl.t =
+      Hashtbl.create 32
 
     (* We define here a helper method that will:
        - process a document
        - store the state resulting from the processing
        - return the diagnostics from the new state
     *)
-    method private _on_doc
-        ~(notify_back:Linol_lwt.Jsonrpc2.notify_back)
-        (uri:Lsp.Types.DocumentUri.t) (contents:string) =
+    method private _on_doc ~(notify_back : Linol_lwt.Jsonrpc2.notify_back)
+        (uri : Lsp.Types.DocumentUri.t) (contents : string) =
       let new_state = process_some_input_file contents in
       Hashtbl.replace buffers uri new_state;
       let diags = diagnostics new_state in
@@ -63,7 +62,8 @@ class lsp_server =
 
     (* Similarly, we also override the [on_notify_doc_did_change] method that will be called
        by the server each time a new document is opened. *)
-    method on_notif_doc_did_change ~notify_back d _c ~old_content:_old ~new_content =
+    method on_notif_doc_did_change ~notify_back d _c ~old_content:_old
+        ~new_content =
       self#_on_doc ~notify_back d.uri new_content
 
     (* On document closes, we remove the state associated to the file from the global
@@ -71,7 +71,6 @@ class lsp_server =
     method on_notif_doc_did_close ~notify_back:_ d : unit Linol_lwt.t =
       Hashtbl.remove buffers d.uri;
       Linol_lwt.return ()
-
   end
 
 (* Main code
@@ -90,4 +89,3 @@ let run () =
 
 (* Finally, we actually run the server *)
 let () = run ()
-
