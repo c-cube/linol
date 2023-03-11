@@ -330,6 +330,14 @@ module Make(IO : IO) = struct
         | Lsp.Client_request.SemanticTokensDelta _
         | Lsp.Client_request.SemanticTokensFull _
         | Lsp.Client_request.SemanticTokensRange _
+        | Lsp.Client_request.TextDocumentImplementation _
+        | Lsp.Client_request.TextDocumentPrepareCallHierarchy _
+        | Lsp.Client_request.TextDocumentRangeFormatting _
+        | Lsp.Client_request.CallHierarchyIncomingCalls _
+        | Lsp.Client_request.CallHierarchyOutgoingCalls _
+        | Lsp.Client_request.WillCreateFiles _
+        | Lsp.Client_request.WillDeleteFiles _
+        | Lsp.Client_request.WillRenameFiles _
         | Lsp.Client_request.UnknownRequest _ ->
           let notify_back = new notify_back ~notify_back () in
           self#on_request_unhandled ~notify_back ~id r
@@ -435,6 +443,11 @@ module Make(IO : IO) = struct
         | Lsp.Client_notification.CancelRequest _
         | Lsp.Client_notification.WorkDoneProgressCancel _
         | Lsp.Client_notification.SetTrace _
+        | Lsp.Client_notification.DidChangeWatchedFiles _
+        | Lsp.Client_notification.DidCreateFiles _
+        | Lsp.Client_notification.DidDeleteFiles _
+        | Lsp.Client_notification.DidRenameFiles _
+        | Lsp.Client_notification.LogTrace _
           ->
           let notify_back = new notify_back ~notify_back () in
           self#on_notification_unhandled ~notify_back n
