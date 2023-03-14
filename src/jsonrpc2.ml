@@ -214,33 +214,17 @@ module Make (IO : IO) : S with module IO = IO = struct
         let r = Lsp.Server_request.response_of_json req json in
         with_error_handler self (fun () -> handler @@ Ok r))
 
-  let handle_batch_response (self : t) (rs : Jsonrpc.Response.t list) :
+  let handle_batch_response (_self : t) (_rs : Jsonrpc.Response.t list) :
       unit IO.t =
-    let rec go = function
-      | [] -> IO.return ()
-      | r :: rs ->
-        let* () = handle_response self r in
-        go rs
-    in
-    go rs
+    IO.failwith "Unhandled: jsonrpc batch response"
 
-  let handle_batch_call (self : t)
-      (cs :
+  let handle_batch_call (_self : t)
+      (_cs :
         [ `Notification of Jsonrpc.Notification.t
         | `Request of Jsonrpc.Request.t
         ]
         list) : unit IO.t =
-    let rec go = function
-      | [] -> IO.return ()
-      | c :: cs ->
-        let* () =
-          match c with
-          | `Notification n -> handle_notification self n
-          | `Request r -> handle_request self r
-        in
-        go cs
-    in
-    go cs
+    IO.failwith "Unhandled: jsonrpc batch call"
 
   (* read a full message *)
   let read_msg (self : t) : (Jsonrpc.Packet.t, exn) result IO.t =
