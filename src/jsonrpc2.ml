@@ -86,6 +86,10 @@ module Make (IO : IO) : S with module IO = IO = struct
     let json = Jsonrpc.Notification.yojson_of_t m in
     send_json_ self json
 
+  (** Send a server request to the LSP client. Invariant: you should call
+      [register_server_request_response_handler] before calling this method to
+      ensure that [handle_response] will have a registered handler for this
+      response. *)
   let send_server_req (self : t) (m : Jsonrpc.Request.t) : unit IO.t =
     let json = Jsonrpc.Request.yojson_of_t m in
     send_json_ self json
