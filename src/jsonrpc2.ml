@@ -60,9 +60,13 @@ module Make (IO : IO) : S with module IO = IO = struct
     ic: IO.in_channel;
     oc: IO.out_channel;
     s: server;
+    mutable id_counter: int;
+    pending_responses: (Req_id.t, server_request_handler_pair) Hashtbl.t;
   }
 
-  let create ~ic ~oc server : t = { ic; oc; s = server }
+  let create ~ic ~oc server : t =
+    { ic; oc; s = server; id_counter = 0; pending_responses = Hashtbl.create 8 }
+
   let create_stdio server : t = create ~ic:IO.stdin ~oc:IO.stdout server
 
   (* send a single message *)
@@ -82,12 +86,149 @@ module Make (IO : IO) : S with module IO = IO = struct
     let json = Jsonrpc.Notification.yojson_of_t m in
     send_json_ self json
 
+  (** Send a server request to the LSP client. Invariant: you should call
+      [register_server_request_response_handler] before calling this method to
+      ensure that [handle_response] will have a registered handler for this
+      response. *)
+  let send_server_req (self : t) (m : Jsonrpc.Request.t) : unit IO.t =
+    let json = Jsonrpc.Request.yojson_of_t m in
+    send_json_ self json
+
+  (** Returns a new, unused [Req_id.t] to send a server request. *)
+  let fresh_lsp_id (self : t) : Req_id.t =
+    let id = self.id_counter in
+    self.id_counter <- id + 1;
+    `Int id
+
+  (** Registers a new handler for a request response. The return indicates
+      whether a value was inserted or not (in which case it's already present). *)
+  let register_server_request_response_handler (self : t) (id : Req_id.t)
+      (handler : server_request_handler_pair) : bool =
+    if Hashtbl.mem self.pending_responses id then
+      false
+    else (
+      let () = Hashtbl.add self.pending_responses id handler in
+      true
+    )
+
   let try_ f =
     IO.catch
       (fun () ->
         let+ x = f () in
         Ok x)
       (fun e -> IO.return (Error e))
+
+  (** Sends a server notification to the LSP client. *)
+  let server_notification (self : t) (n : Lsp.Server_notification.t) : unit IO.t
+      =
+    let msg = Lsp.Server_notification.to_jsonrpc n in
+    send_server_notif self msg
+
+  (** Given a [server_request_handler_pair] consisting of some server request
+      and its handler, sends this request to the LSP client and adds the handler
+      to a table of pending responses. The request will later be handled by
+      [handle_response], which will call the provided handler and delete it from
+      the table of pending responses. *)
+  let server_request (self : t) (req : server_request_handler_pair) :
+      Req_id.t IO.t =
+    let (Request_and_handler (r, _)) = req in
+    let id = fresh_lsp_id self in
+    let msg = Lsp.Server_request.to_jsonrpc_request r ~id in
+    let has_inserted = register_server_request_response_handler self id req in
+    if has_inserted then
+      let* () = send_server_req self msg in
+      return id
+    else
+      IO.failwith "failed to register server request: id was already used"
+
+  (** Wraps some action and, in case the [IO.t] request has failed, logs the
+      failure to the LSP client. *)
+  let with_error_handler (self : t) (action : unit -> unit IO.t) : unit IO.t =
+    IO.catch action (fun e ->
+        let msg =
+          Lsp.Types.LogMessageParams.create ~type_:Lsp.Types.MessageType.Error
+            ~message:(Printexc.to_string e)
+        in
+        let msg =
+          Lsp.Server_notification.LogMessage msg
+          |> Lsp.Server_notification.to_jsonrpc
+        in
+        send_server_notif self msg)
+
+  let handle_notification (self : t) (n : Jsonrpc.Notification.t) : unit IO.t =
+    match Lsp.Client_notification.of_jsonrpc n with
+    | Ok n ->
+      with_error_handler self (fun () ->
+          self.s#on_notification n ~notify_back:(server_notification self)
+            ~server_request:(server_request self))
+    | Error e -> IO.failwith (spf "cannot decode notification: %s" e)
+
+  let handle_request (self : t) (r : Jsonrpc.Request.t) : unit IO.t =
+    let protect ~id f =
+      IO.catch f (fun e ->
+          let message =
+            spf "%s\n%s" (Printexc.to_string e) (Printexc.get_backtrace ())
+          in
+          Log.err (fun k -> k "error: %s" message);
+          let r =
+            Jsonrpc.Response.error id
+              (Jsonrpc.Response.Error.make
+                 ~code:Jsonrpc.Response.Error.Code.InternalError ~message ())
+          in
+          send_response self r)
+    in
+    (* request, so we need to reply *)
+    let id = r.id in
+    IO.catch
+      (fun () ->
+        match Lsp.Client_request.of_jsonrpc r with
+        | Ok (Lsp.Client_request.E r) ->
+          protect ~id (fun () ->
+              let* reply =
+                self.s#on_request r ~id ~notify_back:(server_notification self)
+                  ~server_request:(server_request self)
+              in
+              let reply_json = Lsp.Client_request.yojson_of_result r reply in
+              let response = Jsonrpc.Response.ok id reply_json in
+              send_response self response)
+        | Error e -> IO.failwith (spf "cannot decode request: %s" e))
+      (fun e ->
+        let message =
+          spf "%s\n%s" (Printexc.to_string e) (Printexc.get_backtrace ())
+        in
+        Log.err (fun k -> k "error: %s" message);
+        let r =
+          Jsonrpc.Response.error id
+            (Jsonrpc.Response.Error.make
+               ~code:Jsonrpc.Response.Error.Code.InternalError ~message ())
+        in
+        send_response self r)
+
+  let handle_response (self : t) (r : Jsonrpc.Response.t) : unit IO.t =
+    match Hashtbl.find_opt self.pending_responses r.id with
+    | None ->
+      IO.failwith
+      @@ Printf.sprintf "server request not found for response of id %s"
+      @@ Req_id.to_string r.id
+    | Some (Request_and_handler (req, handler)) ->
+      let () = Hashtbl.remove self.pending_responses r.id in
+      (match r.result with
+      | Error err -> with_error_handler self (fun () -> handler @@ Error err)
+      | Ok json ->
+        let r = Lsp.Server_request.response_of_json req json in
+        with_error_handler self (fun () -> handler @@ Ok r))
+
+  let handle_batch_response (_self : t) (_rs : Jsonrpc.Response.t list) :
+      unit IO.t =
+    IO.failwith "Unhandled: jsonrpc batch response"
+
+  let handle_batch_call (_self : t)
+      (_cs :
+        [ `Notification of Jsonrpc.Notification.t
+        | `Request of Jsonrpc.Request.t
+        ]
+        list) : unit IO.t =
+    IO.failwith "Unhandled: jsonrpc batch call"
 
   (* read a full message *)
   let read_msg (self : t) : (Jsonrpc.Packet.t, exn) result IO.t =
@@ -137,8 +278,9 @@ module Make (IO : IO) : S with module IO = IO = struct
         Log.debug (fun k -> k "got json %s" (J.to_string j));
         (match Jsonrpc.Packet.t_of_yojson j with
         | m -> IO.return @@ Ok m
-        | exception _ ->
-          Log.err (fun k -> k "cannot decode json message");
+        | exception exn ->
+          Log.err (fun k ->
+              k "cannot decode json message: %s" (Printexc.to_string exn));
           IO.return (Error (E (ErrorCode.ParseError, "cannot decode json"))))
       | exception _ ->
         IO.return
@@ -150,72 +292,12 @@ module Make (IO : IO) : S with module IO = IO = struct
   let run ?(shutdown = fun _ -> false) (self : t) : unit IO.t =
     let process_msg r =
       let module M = Jsonrpc.Packet in
-      let protect ~id f =
-        IO.catch f (fun e ->
-            let message =
-              spf "%s\n%s" (Printexc.to_string e) (Printexc.get_backtrace ())
-            in
-            Log.err (fun k -> k "error: %s" message);
-            let r =
-              Jsonrpc.Response.error id
-                (Jsonrpc.Response.Error.make
-                   ~code:Jsonrpc.Response.Error.Code.InternalError ~message ())
-            in
-            send_response self r)
-      in
       match r with
-      | M.Notification n ->
-        (* notification *)
-        (match Lsp.Client_notification.of_jsonrpc n with
-        | Ok n ->
-          IO.catch
-            (fun () ->
-              self.s#on_notification n ~notify_back:(fun n ->
-                  let msg = Lsp.Server_notification.to_jsonrpc n in
-                  send_server_notif self msg))
-            (fun e ->
-              let msg =
-                Lsp.Types.LogMessageParams.create
-                  ~type_:Lsp.Types.MessageType.Error
-                  ~message:(Printexc.to_string e)
-              in
-              let msg =
-                Lsp.Server_notification.LogMessage msg
-                |> Lsp.Server_notification.to_jsonrpc
-              in
-              send_server_notif self msg)
-        | Error e -> IO.failwith (spf "cannot decode notification: %s" e))
-      | M.Request r ->
-        (* request, so we need to reply *)
-        let id = r.id in
-        IO.catch
-          (fun () ->
-            match Lsp.Client_request.of_jsonrpc r with
-            | Ok (Lsp.Client_request.E r) ->
-              protect ~id (fun () ->
-                  let* reply =
-                    self.s#on_request r ~id ~notify_back:(fun n ->
-                        let msg = Lsp.Server_notification.to_jsonrpc n in
-                        send_server_notif self msg)
-                  in
-                  let reply_json =
-                    Lsp.Client_request.yojson_of_result r reply
-                  in
-                  let response = Jsonrpc.Response.ok id reply_json in
-                  send_response self response)
-            | Error e -> IO.failwith (spf "cannot decode request: %s" e))
-          (fun e ->
-            let message =
-              spf "%s\n%s" (Printexc.to_string e) (Printexc.get_backtrace ())
-            in
-            Log.err (fun k -> k "error: %s" message);
-            let r =
-              Jsonrpc.Response.error id
-                (Jsonrpc.Response.Error.make
-                   ~code:Jsonrpc.Response.Error.Code.InternalError ~message ())
-            in
-            send_response self r)
-      | _p -> IO.failwith "neither notification nor request"
+      | M.Notification n -> handle_notification self n
+      | M.Request r -> handle_request self r
+      | M.Response r -> handle_response self r
+      | M.Batch_response rs -> handle_batch_response self rs
+      | M.Batch_call cs -> handle_batch_call self cs
     in
     let rec loop () =
       if shutdown () then
