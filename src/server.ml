@@ -293,6 +293,10 @@ module Make (IO : IO) = struct
       (** List symbols in this document.
         @since 0.3 *)
 
+      method on_unknown_request ~notify_back:(_ : notify_back) ~server_request:_ ~id:_ meth params
+          : Yojson.Safe.t IO.t =
+        IO.failwith "unhandled request"
+
       method on_request : type r.
           notify_back:_ ->
           server_request:_ ->
@@ -452,14 +456,20 @@ module Make (IO : IO) = struct
           | Lsp.Client_request.CallHierarchyOutgoingCalls _
           | Lsp.Client_request.WillCreateFiles _
           | Lsp.Client_request.WillDeleteFiles _
-          | Lsp.Client_request.WillRenameFiles _
-          | Lsp.Client_request.UnknownRequest _ ->
+          | Lsp.Client_request.WillRenameFiles _ ->
             let notify_back =
               new notify_back
                 ~workDoneToken:None ~partialResultToken:None ~notify_back
                 ~server_request ()
             in
             self#on_request_unhandled ~notify_back ~id r
+          | Lsp.Client_request.UnknownRequest r ->
+            let notify_back =
+              new notify_back
+                ~workDoneToken:None ~partialResultToken:None ~notify_back
+                ~server_request ()
+            in
+            self#on_unknown_request ~notify_back ~server_request ~id r.meth r.params
 
       method virtual on_notif_doc_did_open
           : notify_back:notify_back ->
@@ -479,6 +489,10 @@ module Make (IO : IO) = struct
             new_content:string ->
             unit IO.t
       (** Called when the document changes. *)
+
+      method on_unknown_notification ~notify_back:(_ : notify_back)
+          (_n : Jsonrpc.Notification.t) : unit IO.t =
+        IO.return ()
 
       method on_notification_unhandled ~notify_back:(_ : notify_back)
           (_n : Lsp.Client_notification.t) : unit IO.t =
@@ -583,7 +597,6 @@ module Make (IO : IO) = struct
         | Lsp.Client_notification.ChangeWorkspaceFolders _
         | Lsp.Client_notification.ChangeConfiguration _
         | Lsp.Client_notification.Initialized
-        | Lsp.Client_notification.UnknownNotification _
         | Lsp.Client_notification.CancelRequest _
         | Lsp.Client_notification.WorkDoneProgressCancel _
         | Lsp.Client_notification.SetTrace _
@@ -600,5 +613,12 @@ module Make (IO : IO) = struct
           self#on_notification_unhandled
             ~notify_back:(notify_back : notify_back)
             n
+        | Lsp.Client_notification.UnknownNotification n ->
+          let notify_back =
+            new notify_back
+              ~workDoneToken:None ~partialResultToken:None ~notify_back
+              ~server_request ()
+          in
+          self#on_unknown_notification ~notify_back n
     end
 end
