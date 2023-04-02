@@ -1,3 +1,7 @@
+(** Simple JSON-RPC2 implementation.
+
+    See {{: https://www.jsonrpc.org/specification} the spec} *)
+
 type json = Yojson.Safe.t
 
 module type IO = Sigs.IO

@@ -1,4 +1,4 @@
-(** {1 Blocking IO with a new thread for each [spawn]} *)
+(** Blocking IO with a new thread for each [spawn]. *)
 
 include
   Sigs.IO

@@ -1,3 +1,5 @@
+(** Server interface *)
+
 open Sigs
 
 type nonrec doc_state = {
@@ -8,9 +10,9 @@ type nonrec doc_state = {
 }
 (** Current state of a document. *)
 
-(** {2 Request ID}
+(** Request ID.
 
-    unique ID of a request, used by JSONRPC to map each request to its reply. *)
+    The unique ID of a request, used by JSONRPC to map each request to its reply. *)
 module Req_id = struct
   type t = Jsonrpc.Id.t
 
@@ -20,7 +22,7 @@ module Req_id = struct
     | `Int i -> string_of_int i
 end
 
-(** {2 Server interface for some IO substrate} *)
+(** Server interface for some IO substrate. *)
 module Make (IO : IO) = struct
   open Lsp.Types
   module Position = Position

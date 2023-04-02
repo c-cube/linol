@@ -1,4 +1,4 @@
-(** {1 Linol}
+(** Linol.
 
     Abstraction over The "Lsp" library, to make it easier to develop
     LSP servers in OCaml (but not necessarily {b for} OCaml). *)

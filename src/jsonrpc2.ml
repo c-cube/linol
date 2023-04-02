@@ -1,6 +1,3 @@
-(** {1 Simple JSON-RPC2 implementation}
-    See {{: https://www.jsonrpc.org/specification} the spec} *)
-
 module J = Yojson.Safe
 module Err = Jsonrpc.Response.Error
 

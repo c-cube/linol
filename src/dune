@@ -1,5 +1,6 @@
 (library
  (name linol)
  (public_name linol)
+ (private_modules log)
  (flags :standard -warn-error -a+8)
  (libraries yojson lsp logs threads))
