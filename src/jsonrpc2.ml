@@ -227,6 +227,21 @@ module Make (IO : IO) : S with module IO = IO = struct
         list) : unit IO.t =
     IO.failwith "Unhandled: jsonrpc batch call"
 
+  (* As in [https://github.com/c-cube/linol/issues/20],
+     Jsonrpc expect "params" to be object or array,
+     and if the key "params" is present but the value is `Null the [Packet.t_of_yojson]
+     is failing with "invalid structured value" *)
+  let fix_null_in_params (j : J.t) : J.t =
+    let open J.Util in
+    match j with
+    | `Assoc assoc as t when t |> member "params" |> J.equal `Null ->
+      let f = function
+        | "params", `Null -> "params", `Assoc []
+        | x -> x
+      in
+      `Assoc (List.map f assoc)
+    | _ -> j
+
   (* read a full message *)
   let read_msg (self : t) : (Jsonrpc.Packet.t, exn) result IO.t =
     let rec read_headers acc =
@@ -269,11 +284,12 @@ module Make (IO : IO) : S with module IO = IO = struct
         let*? () = try_ @@ fun () -> IO.read self.ic buf 0 n in
         (* log_lsp_ "got bytes %S" (Bytes.unsafe_to_string buf); *)
         let*? j =
-          try_ @@ fun () ->
-          IO.return @@ J.from_string (Bytes.unsafe_to_string buf)
+          Fun.id @@ try_
+          @@ fun () -> IO.return @@ J.from_string (Bytes.unsafe_to_string buf)
         in
         Log.debug (fun k -> k "got json %s" (J.to_string j));
-        (match Jsonrpc.Packet.t_of_yojson j with
+
+        (match Jsonrpc.Packet.t_of_yojson @@ fix_null_in_params j with
         | m -> IO.return @@ Ok m
         | exception exn ->
           Log.err (fun k ->
