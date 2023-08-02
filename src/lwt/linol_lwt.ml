@@ -29,14 +29,16 @@ module IO_lwt :
   let read_line = Lwt_io.read_line
   let catch = Lwt.catch
   let fail = Lwt.fail
-
-  let spawn f =
-    Lwt.async (fun () ->
-        Lwt.catch f (fun exn ->
-            Printf.eprintf "uncaught exception in `spawn`:\n%s\n%!"
-              (Printexc.to_string exn);
-            Lwt.return ()))
 end
+
+(** Spawn function.
+    @since NEXT_RELEASE *)
+let spawn f =
+  Lwt.async (fun () ->
+      Lwt.catch f (fun exn ->
+          Printf.eprintf "uncaught exception in `spawn`:\n%s\n%!"
+            (Printexc.to_string exn);
+          Lwt.return ()))
 
 include Lsp.Types
 include IO_lwt

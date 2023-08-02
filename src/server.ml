@@ -67,6 +67,11 @@ module Make (IO : IO) = struct
 
       method must_quit = false
       (** Set to true if the client requested to exit *)
+
+      method virtual spawn_query_handler : (unit -> unit IO.t) -> unit
+      (** How to start a new future/task/thread concurrently. This is used
+          to process incoming user queries.
+          @since NEXT_RELEASE *)
     end
 
   (** A wrapper to more easily reply to notifications *)

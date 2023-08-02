@@ -17,10 +17,6 @@ module type IO = sig
   val read_line : in_channel -> string t
   val write : out_channel -> bytes -> int -> int -> unit t
   val write_string : out_channel -> string -> unit t
-
-  val spawn : (unit -> unit t) -> unit
-  (** Spawn a new task that executes concurrently. *)
-
   val fail : exn -> unit t
   val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
 end

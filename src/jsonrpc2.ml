@@ -319,7 +319,7 @@ module Make (IO : IO) : S with module IO = IO = struct
         let* r = read_msg self in
         match r with
         | Ok r ->
-          IO.spawn (fun () -> process_msg r);
+          self.s#spawn_query_handler (fun () -> process_msg r);
           loop ()
         | Error e -> IO.fail e
     in

@@ -11,7 +11,7 @@ let fail = raise
 let stdin = stdin
 let stdout = stdout
 
-let default_spawn_ f =
+let default_spawn f =
   let run () =
     try f ()
     with e ->
@@ -21,9 +21,6 @@ let default_spawn_ f =
   in
   ignore (Thread.create run ())
 
-let spawn_ref_ = ref default_spawn_
-let set_spawn_function f = spawn_ref_ := f
-let spawn f = !spawn_ref_ f
 let catch f g = try f () with e -> g e
 
 let rec read ic buf i len =
