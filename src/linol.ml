@@ -10,3 +10,5 @@ module Server = Server
 module Blocking_IO = Blocking_IO
 module Log = Log
 module Make = Jsonrpc2.Make
+
+let logs_src = Log.src
