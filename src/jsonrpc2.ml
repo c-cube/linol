@@ -302,6 +302,10 @@ module Make (IO : IO) : S with module IO = IO = struct
       IO.return
       @@ Error (E (ErrorCode.InvalidRequest, "content-type must be 'utf-8'"))
 
+  (** [shutdown ()] is called after processing each request to check if the server
+    could wait for new messages.
+    When launching an LSP server using [Server.Make.server], the
+    natural choice for it is [s#get_status = `ReceivedExit] *)
   let run ?(shutdown = fun _ -> false) (self : t) : unit IO.t =
     let process_msg r =
       let module M = Jsonrpc.Packet in
