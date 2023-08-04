@@ -1,1 +1,3 @@
-include (val Logs.src_log (Logs.Src.create ~doc:"linol (LSP library)" "linol"))
+let src = Logs.Src.create ~doc:"linol (LSP library)" "linol"
+
+include (val Logs.src_log src)
