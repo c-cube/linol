@@ -81,7 +81,10 @@ class lsp_server =
 let run () =
   let s = new lsp_server in
   let server = Linol_lwt.Jsonrpc2.create_stdio s in
-  let task = Linol_lwt.Jsonrpc2.run server in
+  let task =
+    let shutdown () = s#get_status = `ReceivedExit in
+    Linol_lwt.Jsonrpc2.run ~shutdown server
+  in
   match Linol_lwt.run task with
   | () -> ()
   | exception e ->
