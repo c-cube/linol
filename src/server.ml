@@ -80,6 +80,7 @@ module Make (IO : IO) = struct
     object
       val mutable uri = uri
       method set_uri u = uri <- Some u
+      method get_uri = uri
 
       method send_log_msg ~type_ msg : unit IO.t =
         let params = LogMessageParams.create ~type_ ~message:msg in
@@ -162,6 +163,7 @@ module Make (IO : IO) = struct
         `Running
 
       val docs : (DocumentUri.t, doc_state) Hashtbl.t = Hashtbl.create 16
+
       method get_status = status
       (** Check if exit or shutdown request was made by the client.
         @since NEXT_RELEASE *)
