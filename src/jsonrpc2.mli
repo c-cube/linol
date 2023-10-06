@@ -20,6 +20,19 @@ module type S = sig
   val create_stdio : server -> t
   (** Create a connection using stdin/stdout *)
 
+  val send_server_notification : t -> Lsp.Server_notification.t -> unit IO.t
+  (** Send a notification from the server.
+      @since NEXT_RELEASE *)
+
+  val send_server_request :
+    t ->
+    'from_server Lsp.Server_request.t ->
+    (('from_server, Jsonrpc.Response.Error.t) result -> unit IO.t) ->
+    Req_id.t IO.t
+  (** Send a request from the server, and pass a callback that will be
+      called with the result in the future.
+      @since NEXT_RELEASE *)
+
   val run : ?shutdown:(unit -> bool) -> t -> unit IO.t
   (** Listen for incoming messages and responses.
     @param shutdown if true, tells the server to shut down *)
