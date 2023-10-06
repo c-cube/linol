@@ -9,18 +9,20 @@ module type S = sig
   module IO : IO
 
   type t
-  (** A jsonrpc2 connection. *)
 
   include module type of Server.Make (IO)
 
   val create : ic:IO.in_channel -> oc:IO.out_channel -> server -> t
-  (** Create a connection from the pair of channels *)
-
   val create_stdio : server -> t
-  (** Create a connection using stdin/stdout *)
+  val send_server_notification : t -> Lsp.Server_notification.t -> unit IO.t
+
+  val send_server_request :
+    t ->
+    'from_server Lsp.Server_request.t ->
+    (('from_server, Jsonrpc.Response.Error.t) result -> unit IO.t) ->
+    Req_id.t IO.t
 
   val run : ?shutdown:(unit -> bool) -> t -> unit IO.t
-  (** Listen for incoming messages and responses *)
 end
 
 module Make (IO : IO) : S with module IO = IO = struct
@@ -116,8 +118,8 @@ module Make (IO : IO) : S with module IO = IO = struct
       (fun e -> IO.return (Error e))
 
   (** Sends a server notification to the LSP client. *)
-  let server_notification (self : t) (n : Lsp.Server_notification.t) : unit IO.t
-      =
+  let send_server_notification (self : t) (n : Lsp.Server_notification.t) :
+      unit IO.t =
     let msg = Lsp.Server_notification.to_jsonrpc n in
     send_server_notif self msg
 
@@ -156,7 +158,8 @@ module Make (IO : IO) : S with module IO = IO = struct
     match Lsp.Client_notification.of_jsonrpc n with
     | Ok n ->
       with_error_handler self (fun () ->
-          self.s#on_notification n ~notify_back:(server_notification self)
+          self.s#on_notification n
+            ~notify_back:(send_server_notification self)
             ~server_request:(server_request self))
     | Error e -> IO.failwith (spf "cannot decode notification: %s" e)
 
@@ -182,7 +185,8 @@ module Make (IO : IO) : S with module IO = IO = struct
         | Ok (Lsp.Client_request.E r) ->
           protect ~id (fun () ->
               let* reply =
-                self.s#on_request r ~id ~notify_back:(server_notification self)
+                self.s#on_request r ~id
+                  ~notify_back:(send_server_notification self)
                   ~server_request:(server_request self)
               in
               let reply_json = Lsp.Client_request.yojson_of_result r reply in
@@ -301,6 +305,11 @@ module Make (IO : IO) : S with module IO = IO = struct
     ) else
       IO.return
       @@ Error (E (ErrorCode.InvalidRequest, "content-type must be 'utf-8'"))
+
+  let send_server_request (self : t) (req : 'from_server Lsp.Server_request.t)
+      (cb : ('from_server, Jsonrpc.Response.Error.t) result -> unit IO.t) :
+      Req_id.t IO.t =
+    server_request self (Request_and_handler (req, cb))
 
   (** [shutdown ()] is called after processing each request to check if the server
     could wait for new messages.

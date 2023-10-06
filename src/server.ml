@@ -131,7 +131,8 @@ module Make (IO : IO) = struct
                { value = Lsp.Server_notification.Progress.End p; token }
         | None -> IO.return ()
 
-      method send_notification (n : Lsp.Server_notification.t) = notify_back n
+      method send_notification (n : Lsp.Server_notification.t) : unit IO.t =
+        notify_back n
       (** Send a notification from the server to the client (general purpose method) *)
 
       method send_request
