@@ -1,5 +1,6 @@
 (** Server interface *)
 
+open Common_
 open Sigs
 
 type nonrec doc_state = {
@@ -323,6 +324,8 @@ module Make (IO : IO) = struct
           r Lsp.Client_request.t ->
           r IO.t =
         fun ~notify_back ~server_request ~id (r : _ Lsp.Client_request.t) ->
+          Trace.with_span ~__FILE__ ~__LINE__ "linol.on-request"
+          @@ fun _sp : r IO.t ->
           Log.debug (fun k ->
               k "handle request[id=%s] <opaque>" (Req_id.to_string id));
 
@@ -521,6 +524,9 @@ module Make (IO : IO) = struct
 
       method on_notification ~notify_back ~server_request
           (n : Lsp.Client_notification.t) : unit IO.t =
+        let@ _sp =
+          Trace.with_span ~__FILE__ ~__LINE__ "linol.on-notification"
+        in
         let open Lsp.Types in
         match n with
         | Lsp.Client_notification.TextDocumentDidOpen
