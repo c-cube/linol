@@ -14,6 +14,8 @@ depends: [
   "dune" { >= "2.0" }
   "yojson" { >= "1.6" }
   "logs"
+  "atomic"
+  "trace" { >= "0.4" }
   "lsp" { >= "1.14" & < "1.15" }
   "ocaml" { >= "4.12" }
   "odoc" { with-doc }
