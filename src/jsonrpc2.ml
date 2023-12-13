@@ -316,14 +316,22 @@ module Make (IO : IO) : S with module IO = IO = struct
     When launching an LSP server using [Server.Make.server], the
     natural choice for it is [s#get_status = `ReceivedExit] *)
   let run ?(shutdown = fun _ -> false) (self : t) : unit IO.t =
+    let async f =
+      self.s#spawn_query_handler f;
+      IO.return ()
+    in
+
     let process_msg r =
       let module M = Jsonrpc.Packet in
       match r with
-      | M.Notification n -> handle_notification self n
-      | M.Request r -> handle_request self r
-      | M.Response r -> handle_response self r
-      | M.Batch_response rs -> handle_batch_response self rs
-      | M.Batch_call cs -> handle_batch_call self cs
+      | M.Notification n ->
+        (* NOTE: we handle some notifications sequentially, because
+           they do not commute (e.g. "TextDocumentDidChange" with incremental sync) *)
+        handle_notification self n
+      | M.Request r -> async (fun () -> handle_request self r)
+      | M.Response r -> async (fun () -> handle_response self r)
+      | M.Batch_response rs -> async (fun () -> handle_batch_response self rs)
+      | M.Batch_call cs -> async (fun () -> handle_batch_call self cs)
     in
     let rec loop () =
       if shutdown () then
@@ -332,7 +340,7 @@ module Make (IO : IO) : S with module IO = IO = struct
         let* r = read_msg self in
         match r with
         | Ok r ->
-          self.s#spawn_query_handler (fun () -> process_msg r);
+          let* () = process_msg r in
           loop ()
         | Error e -> IO.fail e
     in

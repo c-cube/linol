@@ -74,6 +74,10 @@ module Make (IO : IO) = struct
           @since NEXT_RELEASE *)
     end
 
+  let async (self : #base_server) f : unit IO.t =
+    self#spawn_query_handler f;
+    IO.return ()
+
   (** A wrapper to more easily reply to notifications *)
   class notify_back ~notify_back ~server_request ~workDoneToken
     ~partialResultToken:_ ?version ?(uri : DocumentUri.t option) () =
@@ -308,8 +312,8 @@ module Make (IO : IO) = struct
       (** List symbols in this document.
         @since 0.3 *)
 
-      method on_unknown_request ~notify_back:(_ : notify_back) ~server_request:_ ~id:_ meth params
-          : Yojson.Safe.t IO.t =
+      method on_unknown_request ~notify_back:(_ : notify_back) ~server_request:_
+          ~id:_ _meth _params : Yojson.Safe.t IO.t =
         IO.failwith "unhandled request"
 
       method on_request : type r.
@@ -484,7 +488,8 @@ module Make (IO : IO) = struct
                 ~workDoneToken:None ~partialResultToken:None ~notify_back
                 ~server_request ()
             in
-            self#on_unknown_request ~notify_back ~server_request ~id r.meth r.params
+            self#on_unknown_request ~notify_back ~server_request ~id r.meth
+              r.params
 
       method virtual on_notif_doc_did_open
           : notify_back:notify_back ->
@@ -536,9 +541,11 @@ module Make (IO : IO) = struct
             }
           in
           Hashtbl.replace docs doc.uri st;
-          self#on_notif_doc_did_open
-            ~notify_back:(notify_back : notify_back)
-            doc ~content:st.content
+
+          async self (fun () ->
+              self#on_notif_doc_did_open
+                ~notify_back:(notify_back : notify_back)
+                doc ~content:st.content)
         | Lsp.Client_notification.TextDocumentDidClose { textDocument = doc } ->
           Log.debug (fun k ->
               k "notif: did close '%s'" (DocumentUri.to_path doc.uri));
@@ -547,9 +554,11 @@ module Make (IO : IO) = struct
               ~workDoneToken:None ~partialResultToken:None ~uri:doc.uri
               ~notify_back ~server_request ()
           in
-          self#on_notif_doc_did_close
-            ~notify_back:(notify_back : notify_back)
-            doc
+
+          async self (fun () ->
+              self#on_notif_doc_did_close
+                ~notify_back:(notify_back : notify_back)
+                doc)
         | Lsp.Client_notification.TextDocumentDidChange
             { textDocument = doc; contentChanges = c } ->
           Log.debug (fun k ->
@@ -599,11 +608,13 @@ module Make (IO : IO) = struct
           in
 
           Hashtbl.replace docs doc.uri new_st;
-          self#on_notif_doc_did_change
-            ~notify_back:(notify_back : notify_back)
-            doc c
-            ~old_content:(Lsp.Text_document.text old_doc)
-            ~new_content:new_st.content
+
+          async self (fun () ->
+              self#on_notif_doc_did_change
+                ~notify_back:(notify_back : notify_back)
+                doc c
+                ~old_content:(Lsp.Text_document.text old_doc)
+                ~new_content:new_st.content)
         | Lsp.Client_notification.Exit ->
           status <- `ReceivedExit;
           IO.return ()
@@ -625,15 +636,18 @@ module Make (IO : IO) = struct
               ~workDoneToken:None ~partialResultToken:None ~notify_back
               ~server_request ()
           in
-          self#on_notification_unhandled
-            ~notify_back:(notify_back : notify_back)
-            n
+
+          async self (fun () ->
+              self#on_notification_unhandled
+                ~notify_back:(notify_back : notify_back)
+                n)
         | Lsp.Client_notification.UnknownNotification n ->
           let notify_back =
             new notify_back
               ~workDoneToken:None ~partialResultToken:None ~notify_back
               ~server_request ()
           in
-          self#on_unknown_notification ~notify_back n
+
+          async self (fun () -> self#on_unknown_notification ~notify_back n)
     end
 end
