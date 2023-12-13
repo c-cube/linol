@@ -13,13 +13,15 @@ jobs:
           #- windows-latest
         ocaml-compiler:
           - 4.12.x
-          - 4.14.x
+          - 5.1.x
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@main
     - uses: ocaml/setup-ocaml@v2
       with:
         ocaml-compiler: ${{ matrix.ocaml-compiler }}
+        dune-cache: true
+        allow-prerelease-opam: true
     - run: opam pin -n .
     - run: opam depext -yt linol linol-lwt
     - run: opam install -t . --deps-only
