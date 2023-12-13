@@ -72,7 +72,8 @@ module Make (IO : IO) : S with module IO = IO = struct
   (* send a single message *)
   let send_json_ (self : t) (j : json) : unit IO.t =
     let json = J.to_string j in
-    Log.debug (fun k -> k "jsonrpc2: send json: %s" json);
+    Log.debug (fun k ->
+        k "jsonrpc2: send json (%dB): %s" (String.length json) json);
     let full_s =
       Printf.sprintf "Content-Length: %d\r\n\r\n%s" (String.length json) json
     in
