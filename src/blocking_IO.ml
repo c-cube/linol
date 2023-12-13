@@ -35,7 +35,10 @@ let rec read ic buf i len =
     read ic buf (i + n) (len - n)
   )
 
-let read_line = input_line
+let read_line ic =
+  let l = input_line ic in
+  ignore (Atomic.fetch_and_add n_bytes_read (String.length l) : int);
+  l
 
 let write oc b i len =
   output oc b i len;
