@@ -1,3 +1,4 @@
+open Common_
 module J = Yojson.Safe
 module Err = Jsonrpc.Response.Error
 
@@ -155,12 +156,15 @@ module Make (IO : IO) : S with module IO = IO = struct
         send_server_notif self msg)
 
   let handle_notification (self : t) (n : Jsonrpc.Notification.t) : unit IO.t =
+    let@ _sp =
+      Trace.with_span ~__FILE__ ~__LINE__ "linol.handle-notification"
+    in
     match Lsp.Client_notification.of_jsonrpc n with
     | Ok n ->
-      with_error_handler self (fun () ->
-          self.s#on_notification n
-            ~notify_back:(send_server_notification self)
-            ~server_request:(server_request self))
+      let@ () = with_error_handler self in
+      self.s#on_notification n
+        ~notify_back:(send_server_notification self)
+        ~server_request:(server_request self)
     | Error e -> IO.failwith (spf "cannot decode notification: %s" e)
 
   let handle_request (self : t) (r : Jsonrpc.Request.t) : unit IO.t =
@@ -183,15 +187,15 @@ module Make (IO : IO) : S with module IO = IO = struct
       (fun () ->
         match Lsp.Client_request.of_jsonrpc r with
         | Ok (Lsp.Client_request.E r) ->
-          protect ~id (fun () ->
-              let* reply =
-                self.s#on_request r ~id
-                  ~notify_back:(send_server_notification self)
-                  ~server_request:(server_request self)
-              in
-              let reply_json = Lsp.Client_request.yojson_of_result r reply in
-              let response = Jsonrpc.Response.ok id reply_json in
-              send_response self response)
+          let@ () = protect ~id in
+          let* reply =
+            self.s#on_request r ~id
+              ~notify_back:(send_server_notification self)
+              ~server_request:(server_request self)
+          in
+          let reply_json = Lsp.Client_request.yojson_of_result r reply in
+          let response = Jsonrpc.Response.ok id reply_json in
+          send_response self response
         | Error e -> IO.failwith (spf "cannot decode request: %s" e))
       (fun e ->
         let message =
