@@ -113,27 +113,20 @@ module Make (IO : IO) = struct
           : unit IO.t =
         match workDoneToken with
         | Some token ->
-          notify_back
-          @@ WorkDoneProgress
-               { value = Lsp.Server_notification.Progress.Begin p; token }
+          notify_back @@ WorkDoneProgress { token; value = Begin p }
         | None -> IO.return ()
 
       method work_done_progress_report (p : Lsp.Types.WorkDoneProgressReport.t)
           : unit IO.t =
         match workDoneToken with
         | Some token ->
-          notify_back
-          @@ WorkDoneProgress
-               { value = Lsp.Server_notification.Progress.Report p; token }
+          notify_back @@ WorkDoneProgress { value = Report p; token }
         | None -> IO.return ()
 
       method work_done_progress_end (p : Lsp.Types.WorkDoneProgressEnd.t)
           : unit IO.t =
         match workDoneToken with
-        | Some token ->
-          notify_back
-          @@ WorkDoneProgress
-               { value = Lsp.Server_notification.Progress.End p; token }
+        | Some token -> notify_back @@ WorkDoneProgress { value = End p; token }
         | None -> IO.return ()
 
       method send_notification (n : Lsp.Server_notification.t) : unit IO.t =
@@ -317,6 +310,13 @@ module Make (IO : IO) = struct
           ~id:_ _meth _params : Yojson.Safe.t IO.t =
         IO.failwith "unhandled request"
 
+      method on_req_inlay_hint ~notify_back:(_ : notify_back) ~id:_ ~uri:_
+          ~range:(_ : Lsp.Types.Range.t) ()
+          : Lsp.Types.InlayHint.t list option IO.t =
+        IO.return None
+      (** Provide inlay hints for this document.
+            @since 0.5 *)
+
       method on_request : type r.
           notify_back:_ ->
           server_request:_ ->
@@ -445,6 +445,14 @@ module Make (IO : IO) = struct
                 ~server_request ()
             in
             self#on_req_code_action ~notify_back ~id a
+          | Lsp.Client_request.InlayHint p ->
+            let notify_back : notify_back =
+              new notify_back
+                ~workDoneToken:p.workDoneToken ~partialResultToken:None
+                ~notify_back ~server_request ()
+            in
+            self#on_req_inlay_hint ~notify_back ~id ~uri:p.textDocument.uri
+              ~range:p.range ()
           | Lsp.Client_request.CodeActionResolve _
           | Lsp.Client_request.LinkedEditingRange _
           | Lsp.Client_request.TextDocumentDeclaration _
@@ -585,13 +593,13 @@ module Make (IO : IO) = struct
 
               let languageId = "" in
               (* FIXME*)
-              Lsp.Text_document.make
+              Lsp.Text_document.make ~position_encoding:`UTF8
                 (DidOpenTextDocumentParams.create
                    ~textDocument:
                      (TextDocumentItem.create ~languageId ~uri:doc.uri ~version
                         ~text:""))
             | Some st ->
-              Lsp.Text_document.make
+              Lsp.Text_document.make ~position_encoding:`UTF8
                 (DidOpenTextDocumentParams.create
                    ~textDocument:
                      (TextDocumentItem.create ~languageId:st.languageId
@@ -599,9 +607,7 @@ module Make (IO : IO) = struct
           in
 
           let new_doc : Lsp.Text_document.t =
-            List.fold_left
-              (fun d ev -> Lsp.Text_document.apply_content_change d ev)
-              old_doc c
+            Lsp.Text_document.apply_content_changes old_doc c
           in
 
           let new_st : doc_state =
@@ -635,8 +641,8 @@ module Make (IO : IO) = struct
         | Lsp.Client_notification.DidChangeWatchedFiles _
         | Lsp.Client_notification.DidCreateFiles _
         | Lsp.Client_notification.DidDeleteFiles _
-        | Lsp.Client_notification.DidRenameFiles _
-        | Lsp.Client_notification.LogTrace _ ->
+        | Lsp.Client_notification.WorkDoneProgress _
+        | Lsp.Client_notification.DidRenameFiles _ ->
           let notify_back =
             new notify_back
               ~workDoneToken:None ~partialResultToken:None ~notify_back

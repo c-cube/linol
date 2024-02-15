@@ -16,8 +16,9 @@ depends: [
   "logs"
   "atomic"
   "trace" { >= "0.4" }
-  "lsp" { >= "1.14" & < "1.15" }
-  "ocaml" { >= "4.12" }
+  "lsp" { >= "1.17" & < "1.18" }
+  "jsonrpc" { >= "1.17" & < "1.18" }
+  "ocaml" { >= "4.14" }
   "odoc" { with-doc }
 ]
 tags: [ "lsp" "server" "lwt" ]
