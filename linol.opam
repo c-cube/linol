@@ -13,7 +13,6 @@ depends: [
   "logs"
   "trace" {>= "0.4"}
   "lsp" {>= "1.19" & < "1.23"}
-  "atomic"
   "jsonrpc" {>= "1.19" & < "1.23"}
   "ocaml" {>= "4.14"}
   "odoc" {with-doc}
