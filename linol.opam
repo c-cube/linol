@@ -14,7 +14,6 @@ depends: [
   "dune" { >= "2.0" }
   "yojson" { >= "1.6" }
   "logs"
-  "atomic"
   "trace" { >= "0.4" }
   "lsp" { >= "1.17" & < "1.18" }
   "jsonrpc" { >= "1.17" & < "1.18" }
