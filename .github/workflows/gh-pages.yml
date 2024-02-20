@@ -3,7 +3,7 @@ name: github pages
 on:
   push:
     branches:
-      - master  # Set a branch name to trigger deployment
+      - main
 
 jobs:
   deploy:
@@ -11,33 +11,21 @@ jobs:
     steps:
       - uses: actions/checkout@main
 
-      - name: Cache opam
-        id: cache-opam
-        uses: actions/cache@v2
+      - uses: ocaml/setup-ocaml@v2
         with:
-          path: ~/.opam
-          key: opam-ubuntu-latest-4.12.0
-
-      - uses: avsm/setup-ocaml@v1
-        with:
-          ocaml-version: '4.12.0'
-
-      - name: Pin
-        run: opam pin -n .
-
-      - name: Depext
-        run: opam depext -yt containers containers-data containers-thread
+          ocaml-compiler: '5.1.x'
+          dune-cache: true
+          allow-prerelease-opam: true
 
       - name: Deps
-        run: opam install -d . --deps-only
+        run: opam install odig linol linol-lwt
 
       - name: Build
-        run: opam exec -- dune build @doc
+        run: opam exec -- odig odoc --cache-dir=_doc/ linol linol-lwt
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./_build/default/_doc/_html/
-          destination_dir: .
+          publish_dir: ./_doc/html
           enable_jekyll: false
