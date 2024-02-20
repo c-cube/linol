@@ -7,11 +7,11 @@ include
      and type out_channel = out_channel
 
 val n_bytes_written : int Atomic.t
-(** @since NEXT_RELEASE *)
+(** @since 0.5 *)
 
 val n_bytes_read : int Atomic.t
-(** @since NEXT_RELEASE *)
+(** @since 0.5 *)
 
 val default_spawn : (unit -> unit) -> unit
 (** Start a new thread.
-    @since NEXT_RELEASE *)
+    @since 0.5 *)

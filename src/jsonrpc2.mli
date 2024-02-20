@@ -22,7 +22,7 @@ module type S = sig
 
   val send_server_notification : t -> Lsp.Server_notification.t -> unit IO.t
   (** Send a notification from the server.
-      @since NEXT_RELEASE *)
+      @since 0.5 *)
 
   val send_server_request :
     t ->
@@ -31,7 +31,7 @@ module type S = sig
     Req_id.t IO.t
   (** Send a request from the server, and pass a callback that will be
       called with the result in the future.
-      @since NEXT_RELEASE *)
+      @since 0.5 *)
 
   val run : ?shutdown:(unit -> bool) -> t -> unit IO.t
   (** Listen for incoming messages and responses.

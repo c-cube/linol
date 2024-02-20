@@ -72,7 +72,7 @@ module Make (IO : IO) = struct
       method virtual spawn_query_handler : (unit -> unit IO.t) -> unit
       (** How to start a new future/task/thread concurrently. This is used
           to process incoming user queries.
-          @since NEXT_RELEASE *)
+          @since 0.5 *)
     end
 
   let async (self : #base_server) f : unit IO.t =
@@ -165,7 +165,7 @@ module Make (IO : IO) = struct
 
       method get_status = status
       (** Check if exit or shutdown request was made by the client.
-        @since NEXT_RELEASE *)
+        @since 0.5 *)
 
       method find_doc (uri : DocumentUri.t) : doc_state option =
         try Some (Hashtbl.find docs uri) with Not_found -> None

@@ -32,7 +32,7 @@ module IO_lwt :
 end
 
 (** Spawn function.
-    @since NEXT_RELEASE *)
+    @since 0.5 *)
 let spawn f =
   Lwt.async (fun () ->
       Lwt.catch f (fun exn ->
