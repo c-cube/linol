@@ -14,10 +14,17 @@ module type S = sig
 
   include module type of Server.Make (IO)
 
-  val create : ic:IO.in_channel -> oc:IO.out_channel -> server -> t
+  val create :
+    ?on_received:(json -> unit) ->
+    ?on_sent:(json -> unit) ->
+    ic:IO.in_channel ->
+    oc:IO.out_channel ->
+    server ->
+    t
   (** Create a connection from the pair of channels *)
 
-  val create_stdio : server -> t
+  val create_stdio :
+    ?on_received:(json -> unit) -> ?on_sent:(json -> unit) -> server -> t
   (** Create a connection using stdin/stdout *)
 
   val send_server_notification : t -> Lsp.Server_notification.t -> unit IO.t

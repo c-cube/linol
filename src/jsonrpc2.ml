@@ -13,8 +13,17 @@ module type S = sig
 
   include module type of Server.Make (IO)
 
-  val create : ic:IO.in_channel -> oc:IO.out_channel -> server -> t
-  val create_stdio : server -> t
+  val create :
+    ?on_received:(json -> unit) ->
+    ?on_sent:(json -> unit) ->
+    ic:IO.in_channel ->
+    oc:IO.out_channel ->
+    server ->
+    t
+
+  val create_stdio :
+    ?on_received:(json -> unit) -> ?on_sent:(json -> unit) -> server -> t
+
   val send_server_notification : t -> Lsp.Server_notification.t -> unit IO.t
 
   val send_server_request :
@@ -59,18 +68,30 @@ module Make (IO : IO) : S with module IO = IO = struct
   type t = {
     ic: IO.in_channel;
     oc: IO.out_channel;
+    on_sent: json -> unit;
+    on_received: json -> unit;
     s: server;
     mutable id_counter: int;
     pending_responses: (Req_id.t, server_request_handler_pair) Hashtbl.t;
   }
 
-  let create ~ic ~oc server : t =
-    { ic; oc; s = server; id_counter = 0; pending_responses = Hashtbl.create 8 }
+  let create ?(on_received = ignore) ?(on_sent = ignore) ~ic ~oc server : t =
+    {
+      ic;
+      oc;
+      s = server;
+      id_counter = 0;
+      on_sent;
+      on_received;
+      pending_responses = Hashtbl.create 8;
+    }
 
-  let create_stdio server : t = create ~ic:IO.stdin ~oc:IO.stdout server
+  let create_stdio ?on_received ?on_sent server : t =
+    create ?on_received ?on_sent ~ic:IO.stdin ~oc:IO.stdout server
 
   (* send a single message *)
   let send_json_ (self : t) (j : json) : unit IO.t =
+    self.on_sent j;
     let json = J.to_string j in
     Log.debug (fun k ->
         k "jsonrpc2: send json (%dB): %s" (String.length json) json);
@@ -296,6 +317,7 @@ module Make (IO : IO) : S with module IO = IO = struct
           Fun.id @@ try_
           @@ fun () -> IO.return @@ J.from_string (Bytes.unsafe_to_string buf)
         in
+        self.on_received j;
         Log.debug (fun k -> k "got json %s" (J.to_string j));
 
         (match Jsonrpc.Packet.t_of_yojson @@ fix_null_in_params j with
