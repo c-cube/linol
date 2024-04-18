@@ -21,7 +21,7 @@ jobs:
         run: opam install odig linol linol-lwt
 
       - name: Build
-        run: mkdir -p _doc/html/ && opam exec -- odig odoc --cache-dir=_doc/ linol linol-lwt || true
+        run: opam exec -- odig odoc --cache-dir=_doc/ linol linol-lwt || (odig log -e ; exit 1)
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
