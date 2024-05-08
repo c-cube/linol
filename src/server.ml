@@ -60,7 +60,7 @@ module Make (IO : IO) = struct
             server_request:send_request ->
             id:Req_id.t ->
             'a Lsp.Client_request.t ->
-            'a IO.t
+            ('a, string) result IO.t
       (** Method called to handle client requests.
         @param notify_back an object used to reply to the client, send progress
         messages, diagnostics, etc.
@@ -149,6 +149,11 @@ module Make (IO : IO) = struct
     content: string;
   }
   (** Current state of a document. *)
+
+  let[@inline] lift_ok x =
+    let open IO in
+    let+ x = x in
+    Ok x
 
   (** An easily overloadable class. Pick the methods you want to support.
       The user must provide at least the callbacks for document lifecycle:
@@ -337,10 +342,24 @@ module Make (IO : IO) = struct
           server_request:_ ->
           id:Req_id.t ->
           r Lsp.Client_request.t ->
-          r IO.t =
+          (r, string) result IO.t =
         fun ~notify_back ~server_request ~id (r : _ Lsp.Client_request.t) ->
           Trace.with_span ~__FILE__ ~__LINE__ "linol.on-request"
-          @@ fun _sp : r IO.t ->
+          @@ fun _sp : (r, string) result IO.t ->
+          (* handler to catch all errors *)
+          let try_catch : (unit -> (r, _) result IO.t) -> (r, _) result IO.t =
+           fun f ->
+            IO.catch f (fun exn bt ->
+                let msg =
+                  spf "LSP request handler failed with %s\n%s"
+                    (Printexc.to_string exn)
+                    (Printexc.raw_backtrace_to_string bt)
+                in
+                Log.err (fun k -> k "%s" msg);
+                IO.return @@ Error msg)
+          in
+
+          try_catch @@ fun () ->
           Log.debug (fun k ->
               k "handle request[id=%s] <opaque>" (Req_id.to_string id));
 
@@ -361,22 +380,23 @@ module Make (IO : IO) = struct
                 ~partialResultToken:None ~workDoneToken:i.workDoneToken
                 ~notify_back ~server_request ()
             in
-            self#on_req_initialize ~notify_back i
+            lift_ok @@ self#on_req_initialize ~notify_back i
           | Lsp.Client_request.TextDocumentHover
               { textDocument; position; workDoneToken } ->
             let uri = textDocument.uri in
             Log.debug (fun k -> k "req: hover '%s'" (DocumentUri.to_path uri));
 
             (match Hashtbl.find_opt docs uri with
-            | None -> IO.return None
+            | None -> IO.return @@ Ok None
             | Some doc_st ->
               let notify_back =
                 new notify_back
                   ~workDoneToken ~partialResultToken:None ~uri ~notify_back
                   ~server_request ()
               in
-              self#on_req_hover ~notify_back ~id ~uri ~pos:position
-                ~workDoneToken doc_st)
+              lift_ok
+              @@ self#on_req_hover ~notify_back ~id ~uri ~pos:position
+                   ~workDoneToken doc_st)
           | Lsp.Client_request.TextDocumentCompletion
               {
                 textDocument;
@@ -389,15 +409,16 @@ module Make (IO : IO) = struct
             Log.debug (fun k ->
                 k "req: complete '%s'" (DocumentUri.to_path uri));
             (match Hashtbl.find_opt docs uri with
-            | None -> IO.return None
+            | None -> IO.return @@ Ok None
             | Some doc_st ->
               let notify_back =
                 new notify_back
                   ~partialResultToken ~workDoneToken ~uri ~notify_back
                   ~server_request ()
               in
-              self#on_req_completion ~notify_back ~id ~uri ~workDoneToken
-                ~partialResultToken ~pos:position ~ctx:context doc_st)
+              lift_ok
+              @@ self#on_req_completion ~notify_back ~id ~uri ~workDoneToken
+                   ~partialResultToken ~pos:position ~ctx:context doc_st)
           | Lsp.Client_request.TextDocumentDefinition
               { textDocument; position; workDoneToken; partialResultToken } ->
             let uri = textDocument.uri in
@@ -410,10 +431,11 @@ module Make (IO : IO) = struct
             in
 
             (match Hashtbl.find_opt docs uri with
-            | None -> IO.return None
+            | None -> IO.return @@ Ok None
             | Some doc_st ->
-              self#on_req_definition ~notify_back ~id ~workDoneToken
-                ~partialResultToken ~uri ~pos:position doc_st)
+              lift_ok
+              @@ self#on_req_definition ~notify_back ~id ~workDoneToken
+                   ~partialResultToken ~uri ~pos:position doc_st)
           | Lsp.Client_request.TextDocumentCodeLens
               { textDocument; workDoneToken; partialResultToken } ->
             let uri = textDocument.uri in
@@ -426,10 +448,11 @@ module Make (IO : IO) = struct
             in
 
             (match Hashtbl.find_opt docs uri with
-            | None -> IO.return []
+            | None -> IO.return @@ Ok []
             | Some doc_st ->
-              self#on_req_code_lens ~notify_back ~id ~uri ~workDoneToken
-                ~partialResultToken doc_st)
+              lift_ok
+              @@ self#on_req_code_lens ~notify_back ~id ~uri ~workDoneToken
+                   ~partialResultToken doc_st)
           | Lsp.Client_request.TextDocumentCodeLensResolve cl ->
             Log.debug (fun k -> k "req: codelens resolve");
             let notify_back =
@@ -437,7 +460,7 @@ module Make (IO : IO) = struct
                 ~workDoneToken:None ~partialResultToken:None ~notify_back
                 ~server_request ()
             in
-            self#on_req_code_lens_resolve ~notify_back ~id cl
+            lift_ok @@ self#on_req_code_lens_resolve ~notify_back ~id cl
           | Lsp.Client_request.ExecuteCommand
               { command; arguments; workDoneToken } ->
             Log.debug (fun k -> k "req: execute command '%s'" command);
@@ -446,8 +469,9 @@ module Make (IO : IO) = struct
                 ~workDoneToken ~partialResultToken:None ~notify_back
                 ~server_request ()
             in
-            self#on_req_execute_command ~notify_back ~id ~workDoneToken command
-              arguments
+            lift_ok
+            @@ self#on_req_execute_command ~notify_back ~id ~workDoneToken
+                 command arguments
           | Lsp.Client_request.DocumentSymbol
               { textDocument = d; workDoneToken; partialResultToken } ->
             let notify_back =
@@ -455,8 +479,9 @@ module Make (IO : IO) = struct
                 ~workDoneToken ~partialResultToken ~notify_back ~server_request
                 ()
             in
-            self#on_req_symbol ~notify_back ~id ~uri:d.uri ~workDoneToken
-              ~partialResultToken ()
+            lift_ok
+            @@ self#on_req_symbol ~notify_back ~id ~uri:d.uri ~workDoneToken
+                 ~partialResultToken ()
           | Lsp.Client_request.CodeAction a ->
             let notify_back =
               new notify_back
@@ -464,15 +489,16 @@ module Make (IO : IO) = struct
                 ~partialResultToken:a.partialResultToken ~notify_back
                 ~server_request ()
             in
-            self#on_req_code_action ~notify_back ~id a
+            lift_ok @@ self#on_req_code_action ~notify_back ~id a
           | Lsp.Client_request.InlayHint p ->
             let notify_back : notify_back =
               new notify_back
                 ~workDoneToken:p.workDoneToken ~partialResultToken:None
                 ~notify_back ~server_request ()
             in
-            self#on_req_inlay_hint ~notify_back ~id ~uri:p.textDocument.uri
-              ~range:p.range ()
+            lift_ok
+            @@ self#on_req_inlay_hint ~notify_back ~id ~uri:p.textDocument.uri
+                 ~range:p.range ()
           | Lsp.Client_request.CodeActionResolve _
           | Lsp.Client_request.LinkedEditingRange _
           | Lsp.Client_request.TextDocumentDeclaration _
@@ -512,15 +538,16 @@ module Make (IO : IO) = struct
                 ~workDoneToken:None ~partialResultToken:None ~notify_back
                 ~server_request ()
             in
-            self#on_request_unhandled ~notify_back ~id r
+            lift_ok @@ self#on_request_unhandled ~notify_back ~id r
           | Lsp.Client_request.UnknownRequest r ->
             let notify_back =
               new notify_back
                 ~workDoneToken:None ~partialResultToken:None ~notify_back
                 ~server_request ()
             in
-            self#on_unknown_request ~notify_back ~server_request ~id r.meth
-              r.params
+            lift_ok
+            @@ self#on_unknown_request ~notify_back ~server_request ~id r.meth
+                 r.params
 
       method virtual on_notif_doc_did_open
           : notify_back:notify_back ->
@@ -559,6 +586,21 @@ module Make (IO : IO) = struct
         let@ _sp =
           Trace.with_span ~__FILE__ ~__LINE__ "linol.on-notification"
         in
+
+        (* handler to catch all errors *)
+        let try_catch : (unit -> unit IO.t) -> unit IO.t =
+         fun f ->
+          IO.catch f (fun exn bt ->
+              let msg =
+                spf "LSP notification handler failed with %s\n%s"
+                  (Printexc.to_string exn)
+                  (Printexc.raw_backtrace_to_string bt)
+              in
+              Log.err (fun k -> k "%s" msg);
+              IO.return ())
+        in
+
+        try_catch @@ fun () ->
         let open Lsp.Types in
         match n with
         | Lsp.Client_notification.TextDocumentDidOpen

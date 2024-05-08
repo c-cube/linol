@@ -18,6 +18,6 @@ module type IO = sig
   val read_line : in_channel -> string t
   val write : out_channel -> bytes -> int -> int -> unit t
   val write_string : out_channel -> string -> unit t
-  val fail : exn -> unit t
-  val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
+  val fail : exn -> Printexc.raw_backtrace -> unit t
+  val catch : (unit -> 'a t) -> (exn -> Printexc.raw_backtrace -> 'a t) -> 'a t
 end
