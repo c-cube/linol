@@ -27,8 +27,12 @@ module IO_lwt :
   let write = Lwt_io.write_from_exactly
   let read = Lwt_io.read_into_exactly
   let read_line = Lwt_io.read_line
-  let catch = Lwt.catch
-  let fail = Lwt.fail
+
+  let catch f g =
+    let bt = Printexc.get_callstack 10 in
+    Lwt.catch f (fun exn -> g exn bt)
+
+  let fail e _bt = Lwt.fail e
 end
 
 (** Spawn function.

@@ -9,7 +9,7 @@ let ( let* ) x f = f x
 let ( and+ ) a b = a, b
 let return x = x
 let failwith = failwith
-let fail = raise
+let fail = Printexc.raise_with_backtrace
 let stdin = stdin
 let stdout = stdout
 
@@ -24,7 +24,12 @@ let default_spawn f =
   in
   ignore (Thread.create run ())
 
-let catch f g = try f () with e -> g e
+let catch f g =
+  try f ()
+  with e ->
+    let bt = Printexc.get_raw_backtrace () in
+    g e bt
+
 let n_bytes_written = Atomic.make 0
 let n_bytes_read = Atomic.make 0
 
