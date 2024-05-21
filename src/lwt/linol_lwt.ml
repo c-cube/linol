@@ -3,6 +3,7 @@ module type IO = Linol.IO
 module IO_lwt :
   IO
     with type 'a t = 'a Lwt.t
+     and type env = unit
      and type in_channel = Lwt_io.input Lwt_io.channel
      and type out_channel = Lwt_io.output Lwt_io.channel = struct
   type 'a t = 'a Lwt.t
@@ -17,9 +18,10 @@ module IO_lwt :
 
   let return = Lwt.return
   let failwith = Lwt.fail_with
-  let stdin = Lwt_io.stdin
-  let stdout = Lwt_io.stdout
+  let stdin = fun () -> Lwt_io.stdin
+  let stdout = fun () -> Lwt_io.stdout
 
+  type env = unit
   type in_channel = Lwt_io.input Lwt_io.channel
   type out_channel = Lwt_io.output Lwt_io.channel
 

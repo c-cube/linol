@@ -60,3 +60,27 @@
     (>= "1.17")
     (< "1.18")))
   ("odoc" :with-doc)))
+
+(package
+ (name linol-eio)
+ (authors "Nick Hu")
+ (synopsis "LSP server library (with Eio for concurrency)")
+ (depends
+  ("yojson"
+   (>= "1.6"))
+  ("linol"
+   (= :version))
+  base-unix
+  ("eio"
+   (and
+    (>= "1.0")
+    (< "1.0")))
+  ("lsp"
+   (and
+    (>= "1.17")
+    (< "1.18")))
+  ("jsonrpc"
+   (and
+    (>= "1.17")
+    (< "1.18")))
+  ("odoc" :with-doc)))

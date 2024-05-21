@@ -1,0 +1,5 @@
+(library
+ (name linol_eio)
+ (public_name linol-eio)
+ (libraries eio eio.unix linol)
+ (flags :standard -warn-error -a))
