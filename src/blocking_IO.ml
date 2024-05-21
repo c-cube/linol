@@ -1,6 +1,7 @@
 open Common_
 
 type 'a t = 'a
+type env = unit
 type nonrec in_channel = in_channel
 type nonrec out_channel = out_channel
 
@@ -10,8 +11,8 @@ let ( and+ ) a b = a, b
 let return x = x
 let failwith = failwith
 let fail = raise
-let stdin = stdin
-let stdout = stdout
+let stdin = fun () -> stdin
+let stdout = fun () -> stdout
 
 let default_spawn f =
   let run () =

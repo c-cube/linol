@@ -80,7 +80,7 @@ class lsp_server =
    and runs it as a task. *)
 let run () =
   let s = new lsp_server in
-  let server = Linol_lwt.Jsonrpc2.create_stdio s in
+  let server = Linol_lwt.Jsonrpc2.create_stdio ~env:() s in
   let task =
     let shutdown () = s#get_status = `ReceivedExit in
     Linol_lwt.Jsonrpc2.run ~shutdown server
