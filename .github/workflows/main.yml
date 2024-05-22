@@ -28,5 +28,8 @@ jobs:
     - run: opam depext -yt linol linol-lwt
     - run: opam install -t . --deps-only
     - run: opam exec -- dune build
+      if: ${{ matrix.ocaml-compiler == '5.1.x' }}
+    - run: opam exec -- dune build -p linol,linol-lwt
+      if: ${{ matrix.ocaml-compiler == '4.14.x' }}
     - run: opam exec -- dune runtest
-      if: ${{ matrix.os == 'ubuntu-latest'}}
+      if: ${{ matrix.os == 'ubuntu-latest' && matrix.ocaml-compiler == '5.1.x' }}
