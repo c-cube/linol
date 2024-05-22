@@ -75,6 +75,7 @@
    (and
     (>= "1.0")
     (< "2.0")))
+  (eio_main :with-test)
   ("lsp"
    (and
     (>= "1.17")

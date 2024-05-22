@@ -12,6 +12,7 @@ depends: [
   "linol" {= version}
   "base-unix"
   "eio" {>= "1.0" & < "2.0"}
+  "eio_main" {with-test}
   "lsp" {>= "1.17" & < "1.18"}
   "jsonrpc" {>= "1.17" & < "1.18"}
   "odoc" {with-doc}
