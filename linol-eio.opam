@@ -11,7 +11,7 @@ depends: [
   "yojson" {>= "1.6"}
   "linol" {= version}
   "base-unix"
-  "eio" {>= "1.0" & < "1.0"}
+  "eio" {>= "1.0" & < "2.0"}
   "lsp" {>= "1.17" & < "1.18"}
   "jsonrpc" {>= "1.17" & < "1.18"}
   "odoc" {with-doc}

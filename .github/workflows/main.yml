@@ -5,17 +5,13 @@ on:
       - main
   pull_request:
 jobs:
-  run:
-    name: Build
+  build4:
     strategy:
       matrix:
         os:
           - ubuntu-latest
-          #- macos-latest
-          #- windows-latest
         ocaml-compiler:
           - 4.14.x
-          - 5.1.x
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@main
@@ -26,10 +22,30 @@ jobs:
         allow-prerelease-opam: true
     - run: opam pin -n .
     - run: opam depext -yt linol linol-lwt
+    - run: opam install linol linol-lwt --deps-only -t
+    - run: opam exec -- dune build -p linol,linol-lwt
+    - run: opam exec -- dune runtest -p linol,linol-lwt
+      if: ${{ matrix.os == 'ubuntu-latest'  }}
+  build5:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          #- macos-latest
+          #- windows-latest
+        ocaml-compiler:
+          - 5.1.x
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@main
+    - uses: ocaml/setup-ocaml@v2
+      with:
+        ocaml-compiler: ${{ matrix.ocaml-compiler }}
+        dune-cache: true
+        allow-prerelease-opam: true
+    - run: opam pin -n .
+    - run: opam depext -yt linol linol-lwt linol-eio
     - run: opam install -t . --deps-only
     - run: opam exec -- dune build
-      if: ${{ matrix.ocaml-compiler == '5.1.x' }}
-    - run: opam exec -- dune build -p linol,linol-lwt
-      if: ${{ matrix.ocaml-compiler == '4.14.x' }}
     - run: opam exec -- dune runtest
-      if: ${{ matrix.os == 'ubuntu-latest' && matrix.ocaml-compiler == '5.1.x' }}
+      if: ${{ matrix.os == 'ubuntu-latest'  }}
