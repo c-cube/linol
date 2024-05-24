@@ -521,6 +521,10 @@ module Make (IO : IO) = struct
             unit IO.t
       (** Called when the document changes. *)
 
+      method on_notif_doc_did_save ~notify_back:(_ : notify_back)
+          (_params : DidSaveTextDocumentParams.t ) : unit IO.t =
+        IO.return ()
+
       method on_unknown_notification ~notify_back:(_ : notify_back)
           (_n : Jsonrpc.Notification.t) : unit IO.t =
         IO.return ()
@@ -627,10 +631,20 @@ module Make (IO : IO) = struct
                 doc c
                 ~old_content:(Lsp.Text_document.text old_doc)
                 ~new_content:new_st.content)
+        | Lsp.Client_notification.DidSaveTextDocument params ->
+          let notify_back =
+            new notify_back
+              ~workDoneToken:None ~partialResultToken:None ~uri:params.textDocument.uri
+              ~notify_back ~server_request ()
+          in
+
+          async self (fun () ->
+              self#on_notif_doc_did_save
+                ~notify_back:(notify_back : notify_back)
+                params)
         | Lsp.Client_notification.Exit ->
           status <- `ReceivedExit;
           IO.return ()
-        | Lsp.Client_notification.DidSaveTextDocument _
         | Lsp.Client_notification.WillSaveTextDocument _
         | Lsp.Client_notification.ChangeWorkspaceFolders _
         | Lsp.Client_notification.ChangeConfiguration _
