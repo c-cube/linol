@@ -206,6 +206,15 @@ module Make (IO : IO) = struct
         None
       (** @since 0.3 *)
 
+      method config_inlay_hints
+          : [ `Bool of bool
+            | `InlayHintOptions of InlayHintOptions.t
+            | `InlayHintRegistrationOptions of InlayHintRegistrationOptions.t
+            ]
+          option =
+        None
+      (** Configuration for the inlay hints API. *)
+
       method config_symbol
           : [ `Bool of bool
             | `DocumentSymbolOptions of DocumentSymbolOptions.t
@@ -242,6 +251,7 @@ module Make (IO : IO) = struct
             ?completionProvider:self#config_completion
             ?definitionProvider:self#config_definition
             ?hoverProvider:self#config_hover
+            ?inlayHintProvider:self#config_inlay_hints
             ?documentSymbolProvider:self#config_symbol
             ~textDocumentSync:(`TextDocumentSyncOptions sync_opts) ()
           |> self#config_modify_capabilities
