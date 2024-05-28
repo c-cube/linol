@@ -52,7 +52,7 @@ let cmd =
     `S Manpage.s_bugs; `P &quot;Report bugs to &lt;bugs@example.org&gt;.&quot;;
     `S Manpage.s_see_also; `P &quot;$(b,rmdir)(1), $(b,unlink)(2)&quot; ]
   in
-  let info = Cmd.info &quot;rm&quot; ~version:&quot;v1.2.0&quot; ~doc ~man in
+  let info = Cmd.info &quot;rm&quot; ~version:&quot;v1.3.0&quot; ~doc ~man in
   Cmd.v info Term.(const rm $ prompt $ recursive $ files)
 
 let main () = exit (Cmd.eval cmd)
@@ -101,7 +101,7 @@ let cmd =
     [ `S Manpage.s_bugs;
       `P &quot;Email them to &lt;bugs@example.org&gt;.&quot;; ]
   in
-  let info = Cmd.info &quot;cp&quot; ~version:&quot;v1.2.0&quot; ~doc ~man ~man_xrefs in
+  let info = Cmd.info &quot;cp&quot; ~version:&quot;v1.3.0&quot; ~doc ~man ~man_xrefs in
   Cmd.v info Term.(ret (const cp $ verbose $ recurse $ force $ srcs $ dest))
 
 
@@ -183,7 +183,7 @@ let cmd =
     `S Manpage.s_see_also;
     `P &quot;$(b,cat)(1), $(b,head)(1)&quot; ]
   in
-  let info = Cmd.info &quot;tail&quot; ~version:&quot;v1.2.0&quot; ~doc ~man in
+  let info = Cmd.info &quot;tail&quot; ~version:&quot;v1.3.0&quot; ~doc ~man in
   Cmd.v info Term.(const tail $ lines $ follow $ verb $ pid $ files)
 
 
@@ -330,7 +330,7 @@ let help_cmd =
 let main_cmd =
   let doc = &quot;a revision control system&quot; in
   let man = help_secs in
-  let info = Cmd.info &quot;darcs&quot; ~version:&quot;v1.2.0&quot; ~doc ~sdocs ~man in
+  let info = Cmd.info &quot;darcs&quot; ~version:&quot;v1.3.0&quot; ~doc ~sdocs ~man in
   let default = Term.(ret (const (fun _ -&gt; `Help (`Pager, None)) $ copts_t)) in
   Cmd.group info ~default [initialize_cmd; record_cmd; help_cmd]
 

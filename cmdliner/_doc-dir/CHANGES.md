@@ -1,3 +1,17 @@
+v1.3.0 2024-05-23 La Forclaz (VS)
+---------------------------------
+
+- Add let operators in `Cmdliner.Term.Syntax` (#173). Thanks to Benoit
+  Montagu for suggesting, Gabriel Scherer for reminding us of language
+  punning obscurities and Sebastien Mondet for strengthening the case
+  to add them.
+- Pager. Support full path command lookups on Windows.
+  (#185). Thanks to @kit-ty-kate for the report.
+- In manpage specifications use `$(iname)` in the default 
+  introduction of the `ENVIRONMENT` section. Follow up to 
+  #168.
+- Add `Cmd.eval_value'` a variation on `Cmd.eval_value`.
+
 v1.2.0 2023-04-10 La Forclaz (VS)
 ---------------------------------
 

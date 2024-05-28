@@ -1,6 +1,6 @@
 Cmdliner — Declarative definition of command line interfaces for OCaml
 -------------------------------------------------------------------------------
-v1.2.0
+v1.3.0
 
 Cmdliner allows the declarative definition of command line interfaces
 for OCaml.
