@@ -8,11 +8,12 @@
 
 (name linol)
 
-(version 0.5)
+(version 0.6)
 
 (license MIT)
 
 (authors "Simon Cruanes")
+(maintainers "Simon Cruanes")
 
 (source
  (github c-cube/linol))

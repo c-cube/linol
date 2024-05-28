@@ -1,4 +1,13 @@
 
+
+# 0.6
+
+- Support textDocument/didSave notification
+- advertise inlay hints server capability
+- Implement Eio backend in `linol-eio`
+- jsonrpc2: add ?on_received/?on_sent
+- drop redundant dependency on atomic
+
 # 0.5
 
 - api break: put `spawn` in the server itself, not `IO`
