@@ -82,11 +82,11 @@ let run () =
   Eio_main.run @@ fun env ->
   let s = new lsp_server in
   let server = Linol_eio.Jsonrpc2.create_stdio ~env s in
-  let task =
+  let task () =
     let shutdown () = s#get_status = `ReceivedExit in
     Linol_eio.Jsonrpc2.run ~shutdown server
   in
-  match task with
+  match task () with
   | () -> ()
   | exception e ->
     let e = Printexc.to_string e in
