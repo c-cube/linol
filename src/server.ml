@@ -325,7 +325,12 @@ module Make (IO : IO) = struct
           : Lsp.Types.InlayHint.t list option IO.t =
         IO.return None
       (** Provide inlay hints for this document.
-            @since 0.5 *)
+        @since 0.5 *)
+
+      method on_req_shutdown ~notify_back:(_ : notify_back) ~id:_ : unit IO.t =
+        IO.return ()
+      (** Process a shutdown request.
+        @since 0.7 *)
 
       method on_request : type r.
           notify_back:_ ->
@@ -342,8 +347,13 @@ module Make (IO : IO) = struct
           match r with
           | Lsp.Client_request.Shutdown ->
             Log.info (fun k -> k "shutdown");
+            let notify_back =
+              new notify_back
+                ~workDoneToken:None ~partialResultToken:None ~notify_back
+                ~server_request ()
+            in
             status <- `ReceivedShutdown;
-            IO.return ()
+            self#on_req_shutdown ~notify_back ~id
           | Lsp.Client_request.Initialize i ->
             Log.debug (fun k -> k "req: initialize");
             let notify_back =
