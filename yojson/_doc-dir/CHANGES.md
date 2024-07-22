@@ -1,3 +1,32 @@
+## 2.2.2
+
+*2024-06-27*
+
+### Added
+
+- Add locations in the JSON5 parser error messages (@gcluzel, #182)
+
+## 2.2.1
+
+*2024-06-04*
+
+### Fixed
+
+- Don't expose `Yojson_five` internals anymore (@Leonidas_from_XIV, #180)
+
+## 2.2.0
+
+*2024-05-31*
+
+### Added
+
+- Added support for JSON5 (@dhilst, @gorm-issuu, @gertsonderby, #152)
+
+### Removed
+
+- Remove CPPO dependency to make the Yojson installation lighter
+  (@Leonidas-from-XIV, #175)
+
 ## 2.1.2
 
 *2023-11-23*
