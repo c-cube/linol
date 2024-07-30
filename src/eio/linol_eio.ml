@@ -14,7 +14,10 @@ module IO_eio :
   let return x = x
   let failwith = failwith
   let fail = raise
-  let catch f handler = try f () with exn -> handler exn
+
+  let catch f handler = try f () with exn ->
+    let bt = Printexc.get_raw_backtrace () in
+    handler exn bt
 
   let stdin env = Eio.Buf_read.of_flow ~max_size:1_000_000 (Eio.Stdenv.stdin env)
   let stdout = Eio.Stdenv.stdout
