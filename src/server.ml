@@ -372,7 +372,7 @@ module Make (IO : IO) = struct
                 ~server_request ()
             in
             status <- `ReceivedShutdown;
-            self#on_req_shutdown ~notify_back ~id
+            lift_ok @@ self#on_req_shutdown ~notify_back ~id
           | Lsp.Client_request.Initialize i ->
             Log.debug (fun k -> k "req: initialize");
             let notify_back =
