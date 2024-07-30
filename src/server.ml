@@ -32,6 +32,11 @@ module Make (IO : IO) = struct
   module DiagnosticSeverity = DiagnosticSeverity
   module Req_id = Req_id
 
+  let[@inline] lift_ok x =
+    let open IO in
+    let+ x = x in
+    Ok x
+
   (** A variant carrying a [Lsp.Server_request.t] and a handler for its return
       value. The request is stored in order to allow us to discriminate its
       existential variable. *)
@@ -49,14 +54,14 @@ module Make (IO : IO) = struct
   class virtual base_server =
     object
       method virtual on_notification
-          : notify_back:(Lsp.Server_notification.t -> unit IO.t) ->
+          : notify_back:(Lsp.Server_notification.t -> (unit, string) result IO.t) ->
             server_request:send_request ->
             Lsp.Client_notification.t ->
-            unit IO.t
+            (unit, string) result IO.t
 
       method virtual on_request
           : 'a.
-            notify_back:(Lsp.Server_notification.t -> unit IO.t) ->
+            notify_back:(Lsp.Server_notification.t -> (unit, string) result IO.t) ->
             server_request:send_request ->
             id:Req_id.t ->
             'a Lsp.Client_request.t ->
@@ -69,30 +74,30 @@ module Make (IO : IO) = struct
       method must_quit = false
       (** Set to true if the client requested to exit *)
 
-      method virtual spawn_query_handler : (unit -> unit IO.t) -> unit
+      method virtual spawn_query_handler : (unit -> (unit, string) result IO.t) -> unit
       (** How to start a new future/task/thread concurrently. This is used
           to process incoming user queries.
           @since 0.5 *)
     end
 
-  let async (self : #base_server) f : unit IO.t =
+  let async (self : #base_server) f : (unit, string) result IO.t =
     self#spawn_query_handler f;
-    IO.return ()
+    IO.return (Ok ())
 
   (** A wrapper to more easily reply to notifications *)
-  class notify_back ~notify_back ~server_request ~workDoneToken
+  class notify_back ~(notify_back: Lsp.Server_notification.t -> (unit, string) result IO.t) ~server_request ~workDoneToken
     ~partialResultToken:_ ?version ?(uri : DocumentUri.t option) () =
     object
       val mutable uri = uri
       method set_uri u = uri <- Some u
       method get_uri = uri
 
-      method send_log_msg ~type_ msg : unit IO.t =
+      method send_log_msg ~type_ msg : (unit, string) result IO.t =
         let params = LogMessageParams.create ~type_ ~message:msg in
         notify_back (Lsp.Server_notification.LogMessage params)
       (** Send a log message to the editor *)
 
-      method send_diagnostic (l : Diagnostic.t list) : unit IO.t =
+      method send_diagnostic (l : Diagnostic.t list) : (unit, string) result IO.t =
         match uri with
         | None ->
           IO.failwith "notify_back: cannot publish diagnostics, no URI given"
@@ -103,33 +108,33 @@ module Make (IO : IO) = struct
           notify_back (Lsp.Server_notification.PublishDiagnostics params)
       (** Send diagnostics for the current document *)
 
-      method telemetry json : unit IO.t =
+      method telemetry json : (unit, string) result IO.t =
         notify_back @@ Lsp.Server_notification.TelemetryNotification json
 
-      method cancel_request (id : Jsonrpc.Id.t) : unit IO.t =
+      method cancel_request (id : Jsonrpc.Id.t) : (unit, string) result IO.t =
         notify_back @@ CancelRequest id
 
       method work_done_progress_begin (p : Lsp.Types.WorkDoneProgressBegin.t)
-          : unit IO.t =
+          : (unit, string) result IO.t =
         match workDoneToken with
         | Some token ->
           notify_back @@ WorkDoneProgress { token; value = Begin p }
-        | None -> IO.return ()
+        | None -> lift_ok @@ IO.return ()
 
       method work_done_progress_report (p : Lsp.Types.WorkDoneProgressReport.t)
-          : unit IO.t =
+          : (unit, string) result IO.t =
         match workDoneToken with
         | Some token ->
           notify_back @@ WorkDoneProgress { value = Report p; token }
-        | None -> IO.return ()
+        | None -> lift_ok @@ IO.return ()
 
       method work_done_progress_end (p : Lsp.Types.WorkDoneProgressEnd.t)
-          : unit IO.t =
+          : (unit, string) result IO.t =
         match workDoneToken with
         | Some token -> notify_back @@ WorkDoneProgress { value = End p; token }
-        | None -> IO.return ()
+        | None -> lift_ok @@ IO.return ()
 
-      method send_notification (n : Lsp.Server_notification.t) : unit IO.t =
+      method send_notification (n : Lsp.Server_notification.t) : (unit, string) result IO.t =
         notify_back n
       (** Send a notification from the server to the client (general purpose method) *)
 
@@ -149,11 +154,6 @@ module Make (IO : IO) = struct
     content: string;
   }
   (** Current state of a document. *)
-
-  let[@inline] lift_ok x =
-    let open IO in
-    let+ x = x in
-    Ok x
 
   (** An easily overloadable class. Pick the methods you want to support.
       The user must provide at least the callbacks for document lifecycle:
@@ -338,7 +338,7 @@ module Make (IO : IO) = struct
         @since 0.7 *)
 
       method on_request : type r.
-          notify_back:_ ->
+          notify_back:(Lsp.Server_notification.t -> (unit, string) result IO.t) ->
           server_request:_ ->
           id:Req_id.t ->
           r Lsp.Client_request.t ->
@@ -553,11 +553,11 @@ module Make (IO : IO) = struct
           : notify_back:notify_back ->
             TextDocumentItem.t ->
             content:string ->
-            unit IO.t
+            (unit, string) result IO.t
       (** Called when a document is opened *)
 
       method virtual on_notif_doc_did_close
-          : notify_back:notify_back -> TextDocumentIdentifier.t -> unit IO.t
+          : notify_back:notify_back -> TextDocumentIdentifier.t -> (unit, string) result IO.t
 
       method virtual on_notif_doc_did_change
           : notify_back:notify_back ->
@@ -565,30 +565,30 @@ module Make (IO : IO) = struct
             TextDocumentContentChangeEvent.t list ->
             old_content:string ->
             new_content:string ->
-            unit IO.t
+            (unit, string) result IO.t
       (** Called when the document changes. *)
 
       method on_notif_doc_did_save ~notify_back:(_ : notify_back)
-          (_params : DidSaveTextDocumentParams.t ) : unit IO.t =
-        IO.return ()
+          (_params : DidSaveTextDocumentParams.t ) : (unit, string) result IO.t =
+        lift_ok @@ IO.return ()
 
       method on_unknown_notification ~notify_back:(_ : notify_back)
-          (_n : Jsonrpc.Notification.t) : unit IO.t =
-        IO.return ()
+          (_n : Jsonrpc.Notification.t) : (unit, string) result IO.t =
+        lift_ok @@ IO.return ()
 
       method on_notification_unhandled ~notify_back:(_ : notify_back)
-          (_n : Lsp.Client_notification.t) : unit IO.t =
-        IO.return ()
+          (_n : Lsp.Client_notification.t) : (unit, string) result IO.t =
+        lift_ok @@ IO.return ()
       (** Override to handle unprocessed notifications *)
 
-      method on_notification ~notify_back ~server_request
-          (n : Lsp.Client_notification.t) : unit IO.t =
+      method on_notification ~(notify_back:Lsp.Server_notification.t -> (unit, string) result IO.t) ~server_request
+          (n : Lsp.Client_notification.t) : (unit, string) result IO.t =
         let@ _sp =
           Trace.with_span ~__FILE__ ~__LINE__ "linol.on-notification"
         in
 
         (* handler to catch all errors *)
-        let try_catch : (unit -> unit IO.t) -> unit IO.t =
+        let try_catch : (unit -> (unit, string) result IO.t) -> (unit, string) result IO.t =
          fun f ->
           IO.catch f (fun exn bt ->
               let msg =
@@ -597,7 +597,7 @@ module Make (IO : IO) = struct
                   (Printexc.raw_backtrace_to_string bt)
               in
               Log.err (fun k -> k "%s" msg);
-              IO.return ())
+              lift_ok @@ IO.return ())
         in
 
         try_catch @@ fun () ->
@@ -688,11 +688,11 @@ module Make (IO : IO) = struct
           Hashtbl.replace docs doc.uri new_st;
 
           async self (fun () ->
-              self#on_notif_doc_did_change
+              (self#on_notif_doc_did_change
                 ~notify_back:(notify_back : notify_back)
                 doc c
                 ~old_content:(Lsp.Text_document.text old_doc)
-                ~new_content:new_st.content)
+                ~new_content:new_st.content))
         | Lsp.Client_notification.DidSaveTextDocument params ->
           let notify_back =
             new notify_back
@@ -706,7 +706,7 @@ module Make (IO : IO) = struct
                 params)
         | Lsp.Client_notification.Exit ->
           status <- `ReceivedExit;
-          IO.return ()
+          lift_ok @@ IO.return ()
         | Lsp.Client_notification.WillSaveTextDocument _
         | Lsp.Client_notification.ChangeWorkspaceFolders _
         | Lsp.Client_notification.ChangeConfiguration _

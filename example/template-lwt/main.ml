@@ -59,7 +59,7 @@ class lsp_server =
 
     (* We now override the [on_notify_doc_did_open] method that will be called
        by the server each time a new document is opened. *)
-    method on_notif_doc_did_open ~notify_back d ~content : unit Linol_lwt.t =
+    method on_notif_doc_did_open ~notify_back d ~content : (unit, string) result Linol_lwt.t =
       self#_on_doc ~notify_back d.uri content
 
     (* Similarly, we also override the [on_notify_doc_did_change] method that will be called
@@ -70,9 +70,9 @@ class lsp_server =
 
     (* On document closes, we remove the state associated to the file from the global
        hashtable state, to avoid leaking memory. *)
-    method on_notif_doc_did_close ~notify_back:_ d : unit Linol_lwt.t =
+    method on_notif_doc_did_close ~notify_back:_ d : (unit, string) result Linol_lwt.t =
       Hashtbl.remove buffers d.uri;
-      Linol_lwt.return ()
+      Linol_lwt.return (Ok ())
   end
 
 (* Main code

@@ -38,12 +38,13 @@ module IO_eio :
 end
 
 (** Spawn function. *)
-let spawn f =
+let spawn (f:unit -> (unit, string) result) : unit  =
   let promise, resolver = Eio.Promise.create () in
   begin
     try
-      f ();
-      Eio.Promise.resolve_ok resolver ()
+      match f () with
+      | Ok _ -> Eio.Promise.resolve_ok resolver ()
+      | Error _ -> ()
     with
       exn ->
       (Printf.eprintf "uncaught exception in `spawn`:\n%s\n%!"
@@ -51,7 +52,7 @@ let spawn f =
       Eio.Promise.resolve_error resolver exn
     end;
 
-  Eio.Promise.await_exn promise
+  (Eio.Promise.await_exn promise)
 
 include Lsp.Types
 include IO_eio
