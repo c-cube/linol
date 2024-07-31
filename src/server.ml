@@ -76,10 +76,14 @@ module Make (IO : IO) = struct
     end
 
   let async (self : #base_server) f : unit IO.t =
-    self#spawn_query_handler
-      (fun () -> try f () with err ->
-        Log.err (fun k -> k "LSP async notification handler failed: %s" (Printexc.to_string err));
-        IO.return ());
+    self#spawn_query_handler (fun () ->
+      IO.catch f (fun exn bt ->
+        let msg =
+          spf "LSP async notification handler failed with %s\n%s"
+            (Printexc.to_string exn)
+            (Printexc.raw_backtrace_to_string bt)
+        in
+        IO.return @@ Log.err (fun k -> k "%s" msg)));
     IO.return ()
 
   (** A wrapper to more easily reply to notifications *)
