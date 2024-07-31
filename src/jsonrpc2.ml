@@ -42,8 +42,6 @@ module Make (IO : IO) : S with module IO = IO = struct
 
   type json = J.t
 
-  let spf = Printf.sprintf
-
   module ErrorCode = Jsonrpc.Response.Error.Code
   (*
   module Err = struct
@@ -138,7 +136,7 @@ module Make (IO : IO) : S with module IO = IO = struct
       (fun () ->
         let+ x = f () in
         Ok x)
-      (fun e -> IO.return (Error e))
+      (fun e bt -> IO.return (Error (e, bt)))
 
   (** Sends a server notification to the LSP client. *)
   let send_server_notification (self : t) (n : Lsp.Server_notification.t) :
@@ -166,10 +164,15 @@ module Make (IO : IO) : S with module IO = IO = struct
   (** Wraps some action and, in case the [IO.t] request has failed, logs the
       failure to the LSP client. *)
   let with_error_handler (self : t) (action : unit -> unit IO.t) : unit IO.t =
-    IO.catch action (fun e ->
+    IO.catch action (fun exn bt ->
+        let message =
+          spf "LSP handler failed with %s\n%s" (Printexc.to_string exn)
+            (Printexc.raw_backtrace_to_string bt)
+        in
+        Log.err (fun k -> k "%s" message);
         let msg =
           Lsp.Types.LogMessageParams.create ~type_:Lsp.Types.MessageType.Error
-            ~message:(Printexc.to_string e)
+            ~message
         in
         let msg =
           Lsp.Server_notification.LogMessage msg
@@ -191,11 +194,12 @@ module Make (IO : IO) : S with module IO = IO = struct
 
   let handle_request (self : t) (r : Jsonrpc.Request.t) : unit IO.t =
     let protect ~id f =
-      IO.catch f (fun e ->
+      IO.catch f (fun e bt ->
           let message =
-            spf "%s\n%s" (Printexc.to_string e) (Printexc.get_backtrace ())
+            spf "%s\n%s" (Printexc.to_string e)
+              (Printexc.raw_backtrace_to_string bt)
           in
-          Log.err (fun k -> k "error: %s" message);
+          Log.err (fun k -> k "error in request handler: %s" message);
           let r =
             Jsonrpc.Response.error id
               (Jsonrpc.Response.Error.make
@@ -215,13 +219,23 @@ module Make (IO : IO) : S with module IO = IO = struct
               ~notify_back:(send_server_notification self)
               ~server_request:(server_request self)
           in
-          let reply_json = Lsp.Client_request.yojson_of_result r reply in
-          let response = Jsonrpc.Response.ok id reply_json in
+          let response =
+            match reply with
+            | Ok reply ->
+              let reply_json = Lsp.Client_request.yojson_of_result r reply in
+              Jsonrpc.Response.ok id reply_json
+            | Error message ->
+              Jsonrpc.Response.error id
+                (Jsonrpc.Response.Error.make
+                   ~code:Jsonrpc.Response.Error.Code.InternalError ~message ())
+          in
+
           send_response self response
         | Error e -> IO.failwith (spf "cannot decode request: %s" e))
-      (fun e ->
+      (fun e bt ->
         let message =
-          spf "%s\n%s" (Printexc.to_string e) (Printexc.get_backtrace ())
+          spf "%s\n%s" (Printexc.to_string e)
+            (Printexc.raw_backtrace_to_string bt)
         in
         Log.err (fun k -> k "error: %s" message);
         let r =
@@ -273,7 +287,8 @@ module Make (IO : IO) : S with module IO = IO = struct
     | _ -> j
 
   (* read a full message *)
-  let read_msg (self : t) : (Jsonrpc.Packet.t, exn) result IO.t =
+  let read_msg (self : t) :
+      (Jsonrpc.Packet.t, exn * Printexc.raw_backtrace) result IO.t =
     let rec read_headers acc =
       let*? line = try_ @@ fun () -> IO.read_line self.ic in
       match String.trim line with
@@ -292,8 +307,9 @@ module Make (IO : IO) : S with module IO = IO = struct
          with
         | pair -> read_headers (pair :: acc)
         | exception _ ->
-          IO.return
-            (Error (E (ErrorCode.ParseError, spf "invalid header: %S" line))))
+          let bt = Printexc.get_raw_backtrace () in
+          let exn = E (ErrorCode.ParseError, spf "invalid header: %S" line) in
+          IO.return (Error (exn, bt)))
     in
     let*? headers = read_headers [] in
     Log.debug (fun k ->
@@ -323,15 +339,21 @@ module Make (IO : IO) : S with module IO = IO = struct
         (match Jsonrpc.Packet.t_of_yojson @@ fix_null_in_params j with
         | m -> IO.return @@ Ok m
         | exception exn ->
+          let bt = Printexc.get_raw_backtrace () in
           Log.err (fun k ->
-              k "cannot decode json message: %s" (Printexc.to_string exn));
-          IO.return (Error (E (ErrorCode.ParseError, "cannot decode json"))))
+              k "cannot decode json message: %s\n%s" (Printexc.to_string exn)
+                (Printexc.raw_backtrace_to_string bt));
+          let exn = E (ErrorCode.ParseError, "cannot decode json") in
+          IO.return (Error (exn, bt)))
       | exception _ ->
+        let bt = Printexc.get_raw_backtrace () in
         IO.return
-        @@ Error (E (ErrorCode.ParseError, "missing content-length' header"))
-    ) else
+        @@ Error (E (ErrorCode.ParseError, "missing content-length' header"), bt)
+    ) else (
+      let bt = Printexc.get_callstack 10 in
       IO.return
-      @@ Error (E (ErrorCode.InvalidRequest, "content-type must be 'utf-8'"))
+      @@ Error (E (ErrorCode.InvalidRequest, "content-type must be 'utf-8'"), bt)
+    )
 
   let send_server_request (self : t) (req : 'from_server Lsp.Server_request.t)
       (cb : ('from_server, Jsonrpc.Response.Error.t) result -> unit IO.t) :
@@ -369,7 +391,7 @@ module Make (IO : IO) : S with module IO = IO = struct
         | Ok r ->
           let* () = process_msg r in
           loop ()
-        | Error e -> IO.fail e
+        | Error (e, bt) -> IO.fail e bt
     in
     loop ()
 end
