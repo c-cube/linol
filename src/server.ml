@@ -77,13 +77,13 @@ module Make (IO : IO) = struct
 
   let async (self : #base_server) f : unit IO.t =
     self#spawn_query_handler (fun () ->
-      IO.catch f (fun exn bt ->
-        let msg =
-          spf "LSP async notification handler failed with %s\n%s"
-            (Printexc.to_string exn)
-            (Printexc.raw_backtrace_to_string bt)
-        in
-        IO.return @@ Log.err (fun k -> k "%s" msg)));
+        IO.catch f (fun exn bt ->
+            let msg =
+              spf "LSP async notification handler failed with %s\n%s"
+                (Printexc.to_string exn)
+                (Printexc.raw_backtrace_to_string bt)
+            in
+            IO.return @@ Log.err (fun k -> k "%s" msg)));
     IO.return ()
 
   (** A wrapper to more easily reply to notifications *)
@@ -223,7 +223,7 @@ module Make (IO : IO) = struct
             | `InlayHintOptions of InlayHintOptions.t
             | `InlayHintRegistrationOptions of InlayHintRegistrationOptions.t
             ]
-          option =
+            option =
         None
       (** Configuration for the inlay hints API. *)
 
@@ -576,7 +576,7 @@ module Make (IO : IO) = struct
       (** Called when the document changes. *)
 
       method on_notif_doc_did_save ~notify_back:(_ : notify_back)
-          (_params : DidSaveTextDocumentParams.t ) : unit IO.t =
+          (_params : DidSaveTextDocumentParams.t) : unit IO.t =
         IO.return ()
 
       method on_unknown_notification ~notify_back:(_ : notify_back)
@@ -703,8 +703,8 @@ module Make (IO : IO) = struct
         | Lsp.Client_notification.DidSaveTextDocument params ->
           let notify_back =
             new notify_back
-              ~workDoneToken:None ~partialResultToken:None ~uri:params.textDocument.uri
-              ~notify_back ~server_request ()
+              ~workDoneToken:None ~partialResultToken:None
+              ~uri:params.textDocument.uri ~notify_back ~server_request ()
           in
 
           async self (fun () ->
