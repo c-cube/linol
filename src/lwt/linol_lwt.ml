@@ -39,16 +39,12 @@ end
 
 (** Spawn function.
     @since 0.5 *)
-let spawn (f: unit -> (unit, string) result Lwt.t) : unit =
-  let g = (fun () ->
-    let _ = Lwt.catch f (fun exn ->
-      Printf.eprintf "uncaught exception in `spawn`:\n%s\n%!"
-        (Printexc.to_string exn);
-      Lwt.return (Error (Printexc.to_string exn)))
-    in
-    Lwt.return ())
-  in
-  Lwt.async g
+let spawn f =
+  Lwt.async (fun () ->
+      Lwt.catch f (fun exn ->
+          Printf.eprintf "uncaught exception in `spawn`:\n%s\n%!"
+            (Printexc.to_string exn);
+          Lwt.return ()))
 
 include Lsp.Types
 include IO_lwt

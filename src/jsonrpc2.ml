@@ -24,7 +24,7 @@ module type S = sig
   val create_stdio :
     ?on_received:(json -> unit) -> ?on_sent:(json -> unit) -> env:IO.env -> server -> t
 
-  val send_server_notification : t -> Lsp.Server_notification.t -> (unit, string) result IO.t
+  val send_server_notification : t -> Lsp.Server_notification.t -> unit IO.t
 
   val send_server_request :
     t ->
@@ -55,11 +55,6 @@ module Make (IO : IO) : S with module IO = IO = struct
                  *)
 
   exception E of ErrorCode.t * string
-
-  let[@inline] lift_ok x =
-    let open IO in
-    let+ x = x in
-    Ok x
 
   (* bind on IO+result *)
   let ( let*? ) x f =
@@ -115,9 +110,9 @@ module Make (IO : IO) : S with module IO = IO = struct
       [register_server_request_response_handler] before calling this method to
       ensure that [handle_response] will have a registered handler for this
       response. *)
-  let send_server_req (self : t) (m : Jsonrpc.Request.t) : (unit, string) result IO.t =
+  let send_server_req (self : t) (m : Jsonrpc.Request.t) : unit IO.t =
     let json = Jsonrpc.Request.yojson_of_t m in
-    lift_ok @@ send_json_ self json
+    send_json_ self json
 
   (** Returns a new, unused [Req_id.t] to send a server request. *)
   let fresh_lsp_id (self : t) : Req_id.t =
@@ -145,9 +140,9 @@ module Make (IO : IO) : S with module IO = IO = struct
 
   (** Sends a server notification to the LSP client. *)
   let send_server_notification (self : t) (n : Lsp.Server_notification.t) :
-      (unit, string) result IO.t =
+      unit IO.t =
     let msg = Lsp.Server_notification.to_jsonrpc n in
-    lift_ok @@ (send_server_notif self msg)
+    send_server_notif self msg
 
   (** Given a [server_request_handler_pair] consisting of some server request
       and its handler, sends this request to the LSP client and adds the handler
@@ -161,7 +156,7 @@ module Make (IO : IO) : S with module IO = IO = struct
     let msg = Lsp.Server_request.to_jsonrpc_request r ~id in
     let has_inserted = register_server_request_response_handler self id req in
     if has_inserted then
-      let* _res = send_server_req self msg in
+      let* () = send_server_req self msg in
       return id
     else
       IO.failwith "failed to register server request: id was already used"
@@ -185,19 +180,19 @@ module Make (IO : IO) : S with module IO = IO = struct
         in
         send_server_notif self msg)
 
-  let handle_notification (self : t) (n : Jsonrpc.Notification.t) : (unit, string) result IO.t =
+  let handle_notification (self : t) (n : Jsonrpc.Notification.t) : unit IO.t =
     let@ _sp =
       Trace.with_span ~__FILE__ ~__LINE__ "linol.handle-notification"
     in
     match Lsp.Client_notification.of_jsonrpc n with
     | Ok n ->
-      (* let@ () = with_error_handler self in *)
+      let@ () = with_error_handler self in
       self.s#on_notification n
         ~notify_back:(send_server_notification self)
         ~server_request:(server_request self)
     | Error e -> IO.failwith (spf "cannot decode notification: %s" e)
 
-  let handle_request (self : t) (r : Jsonrpc.Request.t) : (unit, string) result IO.t =
+  let handle_request (self : t) (r : Jsonrpc.Request.t) : unit IO.t =
     let protect ~id f =
       IO.catch f (fun e bt ->
           let message =
@@ -214,7 +209,7 @@ module Make (IO : IO) : S with module IO = IO = struct
     in
     (* request, so we need to reply *)
     let id = r.id in
-     lift_ok @@ IO.catch
+    IO.catch
       (fun () ->
         match Lsp.Client_request.of_jsonrpc r with
         | Ok (Lsp.Client_request.E r) ->
@@ -250,7 +245,7 @@ module Make (IO : IO) : S with module IO = IO = struct
         in
         send_response self r)
 
-  let handle_response (self : t) (r : Jsonrpc.Response.t) : (unit, string) result IO.t =
+  let handle_response (self : t) (r : Jsonrpc.Response.t) : unit IO.t =
     match Hashtbl.find_opt self.pending_responses r.id with
     | None ->
       IO.failwith
@@ -258,23 +253,23 @@ module Make (IO : IO) : S with module IO = IO = struct
       @@ Req_id.to_string r.id
     | Some (Request_and_handler (req, handler)) ->
       let () = Hashtbl.remove self.pending_responses r.id in
-      lift_ok @@ (match r.result with
+      (match r.result with
       | Error err -> with_error_handler self (fun () -> handler @@ Error err)
       | Ok json ->
         let r = Lsp.Server_request.response_of_json req json in
         with_error_handler self (fun () -> handler @@ Ok r))
 
   let handle_batch_response (_self : t) (_rs : Jsonrpc.Response.t list) :
-      (unit, string) result IO.t =
-      lift_ok @@ IO.failwith "Unhandled: jsonrpc batch response"
+      unit IO.t =
+    IO.failwith "Unhandled: jsonrpc batch response"
 
   let handle_batch_call (_self : t)
       (_cs :
         [ `Notification of Jsonrpc.Notification.t
         | `Request of Jsonrpc.Request.t
         ]
-        list) : (unit, string) result IO.t =
-    lift_ok @@  IO.failwith "Unhandled: jsonrpc batch call"
+        list) : unit IO.t =
+    IO.failwith "Unhandled: jsonrpc batch call"
 
   (* As in [https://github.com/c-cube/linol/issues/20],
      Jsonrpc expect "params" to be object or array,
@@ -372,7 +367,7 @@ module Make (IO : IO) : S with module IO = IO = struct
   let run ?(shutdown = fun _ -> false) (self : t) : unit IO.t =
     let async f =
       self.s#spawn_query_handler f;
-      IO.return (Ok ())
+      IO.return ()
     in
 
     let process_msg r =
@@ -394,7 +389,7 @@ module Make (IO : IO) : S with module IO = IO = struct
         let* r = read_msg self in
         match r with
         | Ok r ->
-          let* _res = process_msg r in
+          let* () = process_msg r in
           loop ()
         | Error (e, bt) -> IO.fail e bt
     in

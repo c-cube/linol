@@ -27,7 +27,7 @@ module type S = sig
     ?on_received:(json -> unit) -> ?on_sent:(json -> unit) -> env:IO.env -> server -> t
   (** Create a connection using stdin/stdout *)
 
-  val send_server_notification : t -> Lsp.Server_notification.t -> (unit, string) result IO.t
+  val send_server_notification : t -> Lsp.Server_notification.t -> unit IO.t
   (** Send a notification from the server.
       @since 0.5 *)
 
