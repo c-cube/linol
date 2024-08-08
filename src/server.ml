@@ -173,6 +173,7 @@ module Make (IO : IO) = struct
       val mutable status : [ `Running | `ReceivedShutdown | `ReceivedExit ] =
         `Running
 
+      val mutable positionEncoding : [ `UTF8 | `UTF16 ] = `UTF16
       val docs : (DocumentUri.t, doc_state) Hashtbl.t = Hashtbl.create 16
 
       method get_status = status
@@ -182,6 +183,26 @@ module Make (IO : IO) = struct
       method find_doc (uri : DocumentUri.t) : doc_state option =
         try Some (Hashtbl.find docs uri) with Not_found -> None
       (** Find current state of the given document, if present. *)
+
+      method set_positionEncoding (i : InitializeParams.t) : unit =
+        match i.capabilities.general with
+        | Some { positionEncodings = Some el; _ } ->
+          let l =
+            List.filter_map
+              (function
+                | PositionEncodingKind.UTF8 -> Some `UTF8
+                | UTF16 -> Some `UTF16
+                | _ -> None)
+              el
+            |> List.sort_uniq compare
+          in
+          let encoding =
+            match l with
+            | [ `UTF8 ] -> `UTF8
+            | [] | [ `UTF16 ] | [ `UTF16; _ ] | [ _; `UTF16 ] | _ -> `UTF16
+          in
+          positionEncoding <- encoding
+        | _ -> ()
 
       method on_request_unhandled : type r.
           notify_back:notify_back ->
@@ -251,8 +272,14 @@ module Make (IO : IO) = struct
       (** List of commands available *)
 
       method on_req_initialize ~notify_back:(_ : notify_back)
-          (_i : InitializeParams.t) : InitializeResult.t IO.t =
+          (i : InitializeParams.t) : InitializeResult.t IO.t =
         let sync_opts = self#config_sync_opts in
+        self#set_positionEncoding i;
+        let positionEncoding =
+          match positionEncoding with
+          | `UTF8 -> PositionEncodingKind.UTF8
+          | `UTF16 -> UTF16
+        in
         let capabilities =
           ServerCapabilities.create
             ?codeLensProvider:self#config_code_lens_options
@@ -265,7 +292,8 @@ module Make (IO : IO) = struct
             ?hoverProvider:self#config_hover
             ?inlayHintProvider:self#config_inlay_hints
             ?documentSymbolProvider:self#config_symbol
-            ~textDocumentSync:(`TextDocumentSyncOptions sync_opts) ()
+            ~textDocumentSync:(`TextDocumentSyncOptions sync_opts)
+            ~positionEncoding ()
           |> self#config_modify_capabilities
         in
         IO.return @@ InitializeResult.create ~capabilities ()
@@ -387,6 +415,7 @@ module Make (IO : IO) = struct
                 ~partialResultToken:None ~workDoneToken:i.workDoneToken
                 ~notify_back ~server_request ()
             in
+            self#set_positionEncoding i;
             lift_ok @@ self#on_req_initialize ~notify_back i
           | Lsp.Client_request.TextDocumentHover
               { textDocument; position; workDoneToken } ->
@@ -666,13 +695,13 @@ module Make (IO : IO) = struct
 
               let languageId = "" in
               (* FIXME*)
-              Lsp.Text_document.make ~position_encoding:`UTF8
+              Lsp.Text_document.make ~position_encoding:positionEncoding
                 (DidOpenTextDocumentParams.create
                    ~textDocument:
                      (TextDocumentItem.create ~languageId ~uri:doc.uri ~version
                         ~text:""))
             | Some st ->
-              Lsp.Text_document.make ~position_encoding:`UTF8
+              Lsp.Text_document.make ~position_encoding:positionEncoding
                 (DidOpenTextDocumentParams.create
                    ~textDocument:
                      (TextDocumentItem.create ~languageId:st.languageId
