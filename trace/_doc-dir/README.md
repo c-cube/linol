@@ -147,9 +147,21 @@ Concrete tracing or observability formats such as:
 - Catapult
   * [x] light bindings here with `trace-tef`.
         (Can be opened in https://ui.perfetto.dev)
-  * [ ] richer bindings with [ocaml-catapult](https://github.com/imandra-ai/catapult),
-        with multi-process backends, etc.
+  * [x] backend for [tldrs](https://github.com/imandra-ai/tldrs), a
+        small rust daemon that aggregates TEF traces from multiple processes/clients
+        into a single `.jsonl` file
+  * [x] [tldrs](https://github.com/imandra-ai/tldrs), to collect TEF traces from multiple processes in a clean way.
+        This requires the rust `tldrs` program to be in path.
+  * ~~[ ] richer bindings with [ocaml-catapult](https://github.com/imandra-ai/catapult),
+        with multi-process backends, etc.~~ (subsumed by tldrs)
 - [x] Tracy (see [ocaml-tracy](https://github.com/imandra-ai/ocaml-tracy), more specifically `tracy-client.trace`)
 - [x] Opentelemetry (see [ocaml-opentelemetry](https://github.com/imandra-ai/ocaml-opentelemetry/), in `opentelemetry.trace`)
 - [ ] landmarks?
 - [ ] Logs (only for messages, obviously)
+
+## Subscribers
+
+The library `trace.subscriber` defines composable _subscribers_, which are sets of callbacks
+that consume tracing events.
+Multiple subscribers can be aggregated together (with events being dispatched to all of them)
+and be installed as a normal _collector_.

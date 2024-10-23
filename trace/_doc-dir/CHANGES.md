@@ -1,4 +1,12 @@
 
+# 0.8
+
+- add `trace.subscriber` instead of a separate library
+- add `trace-tef.tldrs`, to trace multiple processes easily (with external rust daemon)
+
+- breaking: `trace-tef`: use `mtime.now`, not a counter, for multiproc
+- `trace-fuchsia`: require thread-local-storage 0.2
+
 # 0.7
 
 - feat: add levels to `Trace_core`. Levels are similar to `logs` levels, to help control verbosity.
