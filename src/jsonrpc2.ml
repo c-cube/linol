@@ -69,7 +69,7 @@ module Make (IO : IO) : S with module IO = IO = struct
     on_sent: json -> unit;
     on_received: json -> unit;
     s: server;
-    mutable id_counter: int;
+    id_counter: int Atomic.t;
     pending_responses: (Req_id.t, server_request_handler_pair) Hashtbl.t;
   }
 
@@ -78,7 +78,7 @@ module Make (IO : IO) : S with module IO = IO = struct
       ic;
       oc;
       s = server;
-      id_counter = 0;
+      id_counter = Atomic.make 0;
       on_sent;
       on_received;
       pending_responses = Hashtbl.create 8;
@@ -116,8 +116,7 @@ module Make (IO : IO) : S with module IO = IO = struct
 
   (** Returns a new, unused [Req_id.t] to send a server request. *)
   let fresh_lsp_id (self : t) : Req_id.t =
-    let id = self.id_counter in
-    self.id_counter <- id + 1;
+    let id = Atomic.fetch_and_add self.id_counter 1 in
     `Int id
 
   (** Registers a new handler for a request response. The return indicates
