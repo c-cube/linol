@@ -390,6 +390,7 @@ module Make (IO : IO) : S with module IO = IO = struct
         | Ok r ->
           let* () = process_msg r in
           loop ()
+        | Error (End_of_file, _) -> IO.return ()
         | Error (e, bt) -> IO.fail e bt
     in
     loop ()
