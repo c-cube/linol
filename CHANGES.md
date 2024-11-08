@@ -1,4 +1,13 @@
 
+# 0.7
+
+- Handle `End_of_file` by exiting
+- Fix: make server requests thread safe
+- Use positionEncoding advertised by clients
+- Use IO.catch in async
+- Log exceptions in async notification handler
+- Add more error handlers and logging around notif/request handlers
+- Add on_req_shutdown
 
 # 0.6
 
