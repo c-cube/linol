@@ -14,8 +14,8 @@ depends: [
   "base-unix"
   "eio" {>= "1.0" & < "2.0"}
   "eio_main" {with-test}
-  "lsp" {>= "1.17" & < "1.18"}
-  "jsonrpc" {>= "1.17" & < "1.18"}
+  "lsp" {>= "1.19" & < "1.21"}
+  "jsonrpc" {>= "1.19" & < "1.21"}
   "odoc" {with-doc}
 ]
 build: [

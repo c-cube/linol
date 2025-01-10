@@ -35,6 +35,11 @@ jobs:
           #- windows-latest
         ocaml-compiler:
           - 5.1.x
+          - 5.2.x
+          - 5.3.x
+        lsp-version:
+          - 1.19.0
+          - 1.20.1
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@main
@@ -44,6 +49,8 @@ jobs:
         dune-cache: true
         allow-prerelease-opam: true
     - run: opam pin -n .
+    - run: opam pin add jsonrpc ${{ matrix.lsp-version }}
+    - run: opam pin add lsp ${{ matrix.lsp-version }}
     - run: opam depext -yt linol linol-lwt linol-eio
     - run: opam install -t . --deps-only
     - run: opam exec -- dune build
