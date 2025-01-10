@@ -1,4 +1,8 @@
 
+# 0.8
+
+- move to LSP 1.19 and 1.20
+
 # 0.7
 
 - Handle `End_of_file` by exiting
