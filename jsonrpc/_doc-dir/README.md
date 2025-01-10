@@ -4,7 +4,7 @@
 [![Build][build-badge]][build]
 [![Coverage Status][coverall-badge]][coverall]
 
-[build-badge]: https://github.com/ocaml/ocaml-lsp/workflows/Build%20and%20Test/badge.svg
+[build-badge]: https://github.com/ocaml/ocaml-lsp/actions/workflows/build-and-test.yml/badge.svg
 [build]: https://github.com/ocaml/ocaml-lsp/actions
 [coverall-badge]: https://coveralls.io/repos/github/ocaml/ocaml-lsp/badge.svg?branch=master
 [coverall]: https://coveralls.io/github/ocaml/ocaml-lsp?branch=master
@@ -304,6 +304,36 @@ of the value needs to be non-polymorphic to construct a meaningful value.
 Tip (for VS Code OCaml Platform users): You can construct a value using a keybinding
 <kbd>Alt</kbd>+<kbd>C</kbd> or on MacOS <kbd>Option</kbd>+<kbd>C</kbd>
 
+#### Syntax Documentation
+
+> since OCaml-LSP 1.18.0
+
+OCaml-LSP can display documentation about the node under the cursor when
+the user hovers over some OCaml code. For example, hovering over the code
+snippet below will display some information about what the syntax
+is:
+
+```ocaml
+type point = {x: int; y: int}
+```
+Hovering over the above will
+display:
+```
+ocaml type point = { x : int; y : int }
+syntax Record type:
+Allows you to define variants with a fixed set of fields, and all of the
+constructors for a record variant type must have the same fields. See
+Manual
+```
+The documentation is gotten from the Merlin engine which receives
+the nodes under the cursor and infers what the syntax may be about, and
+displays the required information along with links to the manual for further
+reading.
+
+Syntax Documentation is an optional feature and can be activated by
+using the LSP config system with the key called `syntaxDocumentation` and can
+be enabled via setting it to `{ enable: true }`.
+
 ## Debugging
 
 If you use Visual Studio Code, please see OCaml Platform extension
@@ -326,7 +356,7 @@ cd ocaml-lsp
 git submodule update --init --recursive
 
 # create local switch (or use global one)
-opam switch --yes create . ocaml-base-compiler.4.14.0
+opam switch --yes create .
 
 # don't forget to set your environment to use the local switch
 eval $(opam env)

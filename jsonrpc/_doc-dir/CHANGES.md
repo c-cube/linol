@@ -1,3 +1,123 @@
+# 1.20.1
+
+## Fixes
+
+- Deactivate the `jump` code actions by default. Clients can enable them with
+  the `merlinJumpCodeActions` configuration option. Alternatively a custom
+  request is provided for ad hoc use of the feature. (#1411)
+
+# 1.20.0
+
+## Features
+
+- Add custom
+  [`ocamllsp/typeSearch`](/ocaml-lsp-server/docs/ocamllsp/typeSearch-spec.md) request (#1369)
+
+- Make MerlinJump code action configurable (#1376)
+
+- Add custom [`ocamllsp/jump`](/ocaml-lsp-server/docs/ocamllsp/merlinJump-spec.md) request (#1374)
+
+## Fixes
+
+- Fix fd leak in running external processes for preprocessing (#1349)
+
+- Fix prefix parsing for completion of object methods (#1363, fixes #1358)
+
+- Remove some duplicates in the `selectionRange` answers (#1368)
+
+# 1.19.0
+
+## Features
+
+- Add custom [`ocamllsp/getDocumentation`](/ocaml-lsp-server/docs/ocamllsp/getDocumentation-spec.md) request (#1336)
+
+- Add support for OCaml 5.2 (#1233)
+
+- Add a code-action for syntactic and semantic movement shortcuts based on Merlin's Jump command (#1364)
+
+## Fixes
+
+- Kill unnecessary ocamlformat processes with sigterm rather than sigint or
+  sigkill (#1343)
+
+## Features
+
+- Add custom [`ocamllsp/construct`](https://github.com/ocaml/ocaml-lsp/blob/ocaml-lsp-server/docs/ocamllsp/construct-spec.md) request (#1348)
+
+# 1.18.0
+
+## Features
+
+- Introduce a configuration option to control dune diagnostics. The option is
+  called `duneDiganostics` and it may be set to `{ enable: false }` to disable
+  diagnostics. (#1221)
+
+- Support folding of `ifthenelse` expressions (#1031)
+
+- Improve hover behavior (#1245)
+
+  Hovers are no longer displaye on useless parsetree nodes such as keywords,
+  comments, etc.
+
+  Multiline hovers are now filtered away.
+
+  Display expanded ppx's in the hover window.
+
+- Improve document symbols (#1247)
+
+  Use the parse tree instead of the typed tree. This means that document
+  symbols will work even if the source code doesn't type check.
+
+  Include symbols at arbitrary depth.
+
+  Differentiate functions / types / variants / etc.
+
+  This now includes PPXs like `let%expect_test` or `let%bench` in the outline.
+
+- Introduce a `destruct-line` code action. This is an improved version of the
+  old `destruct` code action. (#1283)
+
+- Improve signature inference to only include types for elements that were
+  absent from the signature. Previously, all signature items would always be
+  inserted. (#1289)
+
+- Add an `update-signature` code action to update the types of elements that
+  were already present in the signature (#1289)
+
+- Add custom
+  [`ocamllsp/merlinCallCompatible`](https://github.com/ocaml/ocaml-lsp/blob/e165f6a3962c356adc7364b9ca71788e93489dd0/ocaml-lsp-server/docs/ocamllsp/merlinCallCompatible-spec.md)
+  request (#1265)
+
+- Add custom [`ocamllsp/typeEnclosing`](https://github.com/ocaml/ocaml-lsp/blob/109801e56f2060caf4487427bede28b824f4f1fe/ocaml-lsp-server/docs/ocamllsp/typeEnclosing-spec.md) request (#1304)
+
+## Fixes
+
+- Detect document kind by looking at merlin's `suffixes` config.
+
+  This enables more lsp features for non-.ml/.mli files. Though it still
+  depends on merlin's support. (#1237)
+
+- Correctly accept the `--clientProcessId` flag. (#1242)
+
+- Disable automatic completion and signature help inside comments (#1246)
+
+- Includes a new optional/configurable option to toggle syntax documentation. If
+  toggled on, allows display of syntax documentation on hover tooltips. Can be
+  controlled via environment variables and by GUI for VS code. (#1218)
+
+- For completions on labels that the LSP gets from merlin, take into account
+  whether the prefix being completed starts with `~` or `?`. Change the label
+  completions that start with `?` to start with `~` when the prefix being
+  completed starts with `~`. (#1277)
+
+- Fix document syncing (#1278, #1280, fixes #1207)
+
+- Stop generating inlay hints on generated code (#1290)
+
+- Fix parenthesizing of function types in `SignatureHelp` (#1296)
+
+- Fix syntax documentation rendering (#1318)
+
 # 1.17.0
 
 ## Fixes
@@ -26,6 +146,7 @@
 
 - Add mark/remove unused actions for open, types, for loop indexes, modules,
   match cases, rec, and constructors (#1141)
+- Add inlay hints for types on let bindings (#1159)
 
 - Offer auto-completion for the keyword `in` (#1217)
 
