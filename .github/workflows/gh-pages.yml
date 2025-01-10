@@ -11,9 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@main
 
-      - uses: ocaml/setup-ocaml@v2
+      - uses: ocaml/setup-ocaml@v3
         with:
-          ocaml-compiler: '5.1.x'
+          ocaml-compiler: '5.2'
           dune-cache: true
           allow-prerelease-opam: true
 
