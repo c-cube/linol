@@ -1,3 +1,7 @@
+# 0.9
+
+- add an extensible sum type, so users can implement custom events. For example
+    an OTEL collector can provide custom events to link two spans to one another.
 
 # 0.8
 

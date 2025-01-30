@@ -1,3 +1,17 @@
+# 1.22.0
+
+## Features
+
+- Enable experimental project-wide renaming of identifiers (#1431)
+
+# 1.21.0
+
+## Features
+
+- Add a new server option `standardHover`, that can be used by clients to
+  disable the default hover provider.  When `standardHover = false`
+  `textDocument/hover` requests always returns with empty result. (#1416)
+
 # 1.20.1
 
 ## Fixes
@@ -14,6 +28,7 @@
   [`ocamllsp/typeSearch`](/ocaml-lsp-server/docs/ocamllsp/typeSearch-spec.md) request (#1369)
 
 - Make MerlinJump code action configurable (#1376)
+- Add support for OCaml 5.3 (#1386)
 
 - Add custom [`ocamllsp/jump`](/ocaml-lsp-server/docs/ocamllsp/merlinJump-spec.md) request (#1374)
 
