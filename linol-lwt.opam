@@ -13,8 +13,8 @@ depends: [
   "linol" {= version}
   "base-unix"
   "lwt" {>= "5.1" & < "6.0"}
-  "lsp" {>= "1.19" & < "1.22"}
-  "jsonrpc" {>= "1.19" & < "1.22"}
+  "lsp" {>= "1.19" & <= "1.22"}
+  "jsonrpc" {>= "1.19" & <= "1.22"}
   "odoc" {with-doc}
 ]
 build: [

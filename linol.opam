@@ -12,9 +12,9 @@ depends: [
   "yojson" {>= "1.6"}
   "logs"
   "trace" {>= "0.4"}
-  "lsp" {>= "1.19" & < "1.22"}
+  "lsp" {>= "1.19" & <= "1.22"}
   "atomic"
-  "jsonrpc" {>= "1.19" & < "1.22"}
+  "jsonrpc" {>= "1.19" & <= "1.22"}
   "ocaml" {>= "4.14"}
   "odoc" {with-doc}
 ]
