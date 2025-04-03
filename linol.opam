@@ -8,7 +8,7 @@ license: "MIT"
 homepage: "https://github.com/c-cube/linol"
 bug-reports: "https://github.com/c-cube/linol/issues"
 depends: [
-  "dune" {>= "3.0"}
+  "dune" {>= "2.0"}
   "yojson" {>= "1.6"}
   "logs"
   "trace" {>= "0.4"}
@@ -18,7 +18,7 @@ depends: [
   "ppx_yojson_conv_lib" {>= "v0.14"}
 ]
 build: [
-  ["dune" "subst"] {dev}
+  ["dune" "subst"] {pinned}
   [
     "dune"
     "build"
