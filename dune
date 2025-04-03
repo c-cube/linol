@@ -1,1 +1,1 @@
-(vendored_dirs vendor)
+(data_only_dirs submodules)

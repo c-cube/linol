@@ -1,3 +1,3 @@
-[submodule "vendor/ocaml-lsp"]
-	path = vendor/ocaml-lsp
-	url = https://github.com/giltho/ocaml-lsp.git
+[submodule "submodules/ocaml-lsp"]
+	path = submodules/ocaml-lsp
+	url = https://github.com/ocaml/ocaml-lsp.git
