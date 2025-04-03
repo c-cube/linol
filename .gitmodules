@@ -1,0 +1,3 @@
+[submodule "submodules/ocaml-lsp"]
+	path = submodules/ocaml-lsp
+	url = https://github.com/ocaml/ocaml-lsp.git

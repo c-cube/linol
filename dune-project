@@ -28,17 +28,14 @@
   "logs"
   ("trace"
    (>= "0.4"))
-  ("lsp"
-   (and
-    (>= "1.19")
-    (< "1.23")))
-  ("jsonrpc"
-   (and
-    (>= "1.19")
-    (< "1.23")))
   ("ocaml"
    (>= "4.14"))
-  ("odoc" :with-doc)))
+  ("odoc" :with-doc)
+  ; The following dependencies are needed for lsp, which we vendor
+  (uutf
+   (>= 1.0.2))
+  (ppx_yojson_conv_lib
+   (>= "v0.14"))))
 
 (package
  (name linol-lwt)
@@ -53,14 +50,6 @@
    (and
     (>= "5.1")
     (< "6.0")))
-  ("lsp"
-   (and
-    (>= "1.19")
-    (< "1.23")))
-  ("jsonrpc"
-   (and
-    (>= "1.19")
-    (< "1.23")))
   ("odoc" :with-doc)))
 
 (package
@@ -78,12 +67,4 @@
     (>= "1.0")
     (< "2.0")))
   (eio_main :with-test)
-  ("lsp"
-   (and
-    (>= "1.19")
-    (< "1.23")))
-  ("jsonrpc"
-   (and
-    (>= "1.19")
-    (< "1.23")))
   ("odoc" :with-doc)))

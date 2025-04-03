@@ -1,5 +1,5 @@
 (library
  (name linol_lwt)
  (public_name linol-lwt)
- (libraries yojson lwt lwt.unix linol lsp jsonrpc)
+ (libraries yojson lwt lwt.unix linol linol.lsp linol.jsonrpc)
  (flags :standard -warn-error -a))

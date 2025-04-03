@@ -15,6 +15,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@main
+      with:
+        submodules: 'recursive'
     - uses: ocaml/setup-ocaml@v3
       with:
         ocaml-compiler: ${{ matrix.ocaml-compiler }}
@@ -37,21 +39,17 @@ jobs:
           - 5.1.x
           - 5.2.x
           - 5.3.x
-        lsp-version:
-          - 1.19.0
-          - 1.20.1
-          - 1.22.0
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@main
+      with:
+          submodules: 'recursive'
     - uses: ocaml/setup-ocaml@v3
       with:
         ocaml-compiler: ${{ matrix.ocaml-compiler }}
         dune-cache: true
         allow-prerelease-opam: true
     - run: opam pin -n .
-    - run: opam pin add jsonrpc ${{ matrix.lsp-version }}
-    - run: opam pin add lsp ${{ matrix.lsp-version }}
     - run: opam depext -yt linol linol-lwt linol-eio
     - run: opam install -t . --deps-only
     - run: opam exec -- dune build

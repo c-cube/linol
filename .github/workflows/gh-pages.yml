@@ -10,7 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@main
-
+        with:
+          submodules: 'recursive'
       - uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: '5.2'

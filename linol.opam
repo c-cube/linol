@@ -12,10 +12,10 @@ depends: [
   "yojson" {>= "1.6"}
   "logs"
   "trace" {>= "0.4"}
-  "lsp" {>= "1.19" & < "1.23"}
-  "jsonrpc" {>= "1.19" & < "1.23"}
   "ocaml" {>= "4.14"}
   "odoc" {with-doc}
+  "uutf" {>= "1.0.2"}
+  "ppx_yojson_conv_lib" {>= "v0.14"}
 ]
 build: [
   ["dune" "subst"] {pinned}
