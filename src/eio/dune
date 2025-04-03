@@ -1,5 +1,5 @@
 (library
  (name linol_eio)
  (public_name linol-eio)
- (libraries eio eio.unix linol.lso linol.jsonrpc)
+ (libraries eio eio.unix linol linol.lsp linol.jsonrpc)
  (flags :standard -warn-error -a))
