@@ -1,0 +1,4 @@
+(library
+ (name linol_lsp)
+ (public_name linol.lsp)
+ (libraries lsp jsonrpc))
