@@ -1,5 +1,5 @@
 (library
  (name linol_lwt)
  (public_name linol-lwt)
- (libraries yojson lwt lwt.unix linol linol_lsp)
+ (libraries yojson lwt lwt.unix linol linol.lsp)
  (flags :standard -warn-error -a -open Linol_lsp.Import))

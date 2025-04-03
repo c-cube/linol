@@ -1,5 +1,5 @@
 (library
  (name linol_eio)
  (public_name linol-eio)
- (libraries eio eio.unix linol)
- (flags :standard -warn-error -a))
+ (libraries eio eio.unix linol linol.lsp)
+ (flags :standard -warn-error -a -open Linol_lsp.Import))
