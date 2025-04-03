@@ -13,6 +13,9 @@ clean:
 doc:
 	@dune build @doc
 
+fmt:
+	@dune build @fmt --auto-promote
+
 VERSION=$(shell awk '/^version:/ {print $$2}' linol.opam)
 
 update_next_tag:

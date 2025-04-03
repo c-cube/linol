@@ -15,11 +15,15 @@ module IO_eio :
   let failwith = failwith
   let fail = raise
 
-  let catch f handler = try f () with exn ->
-    let bt = Printexc.get_raw_backtrace () in
-    handler exn bt
+  let catch f handler =
+    try f ()
+    with exn ->
+      let bt = Printexc.get_raw_backtrace () in
+      handler exn bt
 
-  let stdin env = Eio.Buf_read.of_flow ~max_size:1_000_000 (Eio.Stdenv.stdin env)
+  let stdin env =
+    Eio.Buf_read.of_flow ~max_size:1_000_000 (Eio.Stdenv.stdin env)
+
   let stdout = Eio.Stdenv.stdout
 
   type env = Eio_unix.Stdenv.base
@@ -27,29 +31,28 @@ module IO_eio :
   type out_channel = Eio_unix.sink_ty Eio.Std.r
 
   let write_string out_ch str = Eio.Flow.copy_string str out_ch
+
   let write out_ch bytes off len =
     Eio.Buf_write.with_flow out_ch @@ fun w ->
     Eio.Buf_write.bytes w ~off ~len bytes
+
   let read in_ch bytes off len =
     let str = Eio.Buf_read.take len in_ch in
     Bytes.blit_string str off bytes 0 len
-  let read_line in_ch =
-    Eio.Buf_read.line in_ch
+
+  let read_line in_ch = Eio.Buf_read.line in_ch
 end
 
 (** Spawn function. *)
 let spawn f =
   let promise, resolver = Eio.Promise.create () in
-  begin
-    try
-      f ();
-      Eio.Promise.resolve_ok resolver ()
-    with
-      exn ->
-      (Printf.eprintf "uncaught exception in `spawn`:\n%s\n%!"
-        (Printexc.to_string exn));
-      Eio.Promise.resolve_error resolver exn
-    end;
+  (try
+     f ();
+     Eio.Promise.resolve_ok resolver ()
+   with exn ->
+     Printf.eprintf "uncaught exception in `spawn`:\n%s\n%!"
+       (Printexc.to_string exn);
+     Eio.Promise.resolve_error resolver exn);
 
   Eio.Promise.await_exn promise
 

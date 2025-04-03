@@ -22,7 +22,11 @@ module type S = sig
     t
 
   val create_stdio :
-    ?on_received:(json -> unit) -> ?on_sent:(json -> unit) -> env:IO.env -> server -> t
+    ?on_received:(json -> unit) ->
+    ?on_sent:(json -> unit) ->
+    env:IO.env ->
+    server ->
+    t
 
   val send_server_notification : t -> Lsp.Server_notification.t -> unit IO.t
 

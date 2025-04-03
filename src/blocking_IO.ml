@@ -10,11 +10,9 @@ let ( let* ) x f = f x
 let ( and+ ) a b = a, b
 let return x = x
 let failwith = failwith
-
 let fail = Printexc.raise_with_backtrace
-
-let stdin = fun () -> stdin
-let stdout = fun () -> stdout
+let stdin () = stdin
+let stdout () = stdout
 
 let default_spawn f =
   let run () =

@@ -18,8 +18,8 @@ module IO_lwt :
 
   let return = Lwt.return
   let failwith = Lwt.fail_with
-  let stdin = fun () -> Lwt_io.stdin
-  let stdout = fun () -> Lwt_io.stdout
+  let stdin () = Lwt_io.stdin
+  let stdout () = Lwt_io.stdout
 
   type env = unit
   type in_channel = Lwt_io.input Lwt_io.channel
