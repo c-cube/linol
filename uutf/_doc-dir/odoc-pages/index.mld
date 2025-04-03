@@ -1,0 +1,25 @@
+{0 Uutf {%html: <span class="version">v1.0.4</span>%}}
+
+{b Warning.} You are encouraged not to use this library.
+
+{ul
+{- As of OCaml 4.14, both UTF encoding and decoding are available
+   in the standard library, see the {!String} and {!Buffer} modules.}
+{- If you are looking for a stream abstraction compatible with
+   effect based concurrency look into the
+   {{:https://erratique.ch/software/bytesrw}bytesrw} package.}}
+
+Uutf is a non-blocking streaming codec to decode and encode the UTF-8,
+UTF-16, UTF-16LE and UTF-16BE encoding schemes. It can efficiently
+work character by character without blocking on IO. Decoders perform
+character position tracking and support newline normalization.
+
+Functions are also provided to fold over the characters of UTF encoded
+OCaml string values and to directly encode characters in OCaml
+{!Buffer.t} values.
+
+{1:library_uutf Library [uutf]}
+
+{!modules:
+Uutf
+}

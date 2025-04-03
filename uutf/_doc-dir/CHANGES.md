@@ -1,5 +1,13 @@
-v1.0.3 2022-02-03
------------------
+v1.0.4 2025-03-10 La Forclaz (VS)
+---------------------------------
+
+- Implement `Uutf.Buffer.*` with `Stdlib.Buffer.*`, no need to bloat
+  these executable with dozens of different UTF encoders.
+- Require OCaml >= 4.08.
+- `uuidtrip`, handle `cmdliner` deprecations.
+
+v1.0.3 2022-02-03 La Forclaz (VS)
+---------------------------------
 
 - Support for OCaml 5.00, thanks to Kate (@kit-ty-kate) for
   the patch.

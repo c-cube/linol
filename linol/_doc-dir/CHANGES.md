@@ -1,4 +1,9 @@
 
+# 0.9
+
+- Drop redundant dependency on atomic
+- Add support for lsp 1.22
+
 # 0.8
 
 - move to LSP 1.19 and 1.20
