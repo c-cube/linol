@@ -3,6 +3,7 @@
     Abstraction over The "Lsp" library, to make it easier to develop
     LSP servers in OCaml (but not necessarily {b for} OCaml). *)
 
+    
 module type IO = Sigs.IO
 
 module Jsonrpc2 = Jsonrpc2

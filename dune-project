@@ -1,4 +1,6 @@
-(lang dune 2.0)
+(lang dune 3.0)
+
+(using cinaps 1.0)
 
 ;(implicit_transitive_deps false)
 

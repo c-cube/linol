@@ -2,5 +2,5 @@
  (name linol)
  (public_name linol)
  (private_modules log)
- (flags :standard -warn-error -a+8 -open Linol_lsp.Import)
- (libraries yojson linol_lsp logs threads trace.core))
+ (flags :standard -warn-error -a+8)
+ (libraries yojson logs threads trace.core lsp jsonrpc))
