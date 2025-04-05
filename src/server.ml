@@ -13,7 +13,8 @@ type nonrec doc_state = {
 
 (** Request ID.
 
-    The unique ID of a request, used by JSONRPC to map each request to its reply. *)
+    The unique ID of a request, used by JSONRPC to map each request to its
+    reply. *)
 module Req_id = struct
   type t = Jsonrpc.Id.t
 
@@ -62,16 +63,18 @@ module Make (IO : IO) = struct
             'a Lsp.Client_request.t ->
             ('a, string) result IO.t
       (** Method called to handle client requests.
-        @param notify_back an object used to reply to the client, send progress
-        messages, diagnostics, etc.
-        @param id the query RPC ID, can be used for tracing, cancellation, etc. *)
+          @param notify_back
+            an object used to reply to the client, send progress messages,
+            diagnostics, etc.
+          @param id
+            the query RPC ID, can be used for tracing, cancellation, etc. *)
 
       method must_quit = false
       (** Set to true if the client requested to exit *)
 
       method virtual spawn_query_handler : (unit -> unit IO.t) -> unit
-      (** How to start a new future/task/thread concurrently. This is used
-          to process incoming user queries.
+      (** How to start a new future/task/thread concurrently. This is used to
+          process incoming user queries.
           @since 0.5 *)
     end
 
@@ -116,8 +119,8 @@ module Make (IO : IO) = struct
       method cancel_request (id : Jsonrpc.Id.t) : unit IO.t =
         notify_back @@ CancelRequest id
 
-      method work_done_progress_begin (p : Lsp.Types.WorkDoneProgressBegin.t)
-          : unit IO.t =
+      method work_done_progress_begin (p : Lsp.Types.WorkDoneProgressBegin.t) :
+          unit IO.t =
         match workDoneToken with
         | Some token ->
           notify_back @@ WorkDoneProgress { token; value = Begin p }
@@ -130,23 +133,25 @@ module Make (IO : IO) = struct
           notify_back @@ WorkDoneProgress { value = Report p; token }
         | None -> IO.return ()
 
-      method work_done_progress_end (p : Lsp.Types.WorkDoneProgressEnd.t)
-          : unit IO.t =
+      method work_done_progress_end (p : Lsp.Types.WorkDoneProgressEnd.t) :
+          unit IO.t =
         match workDoneToken with
         | Some token -> notify_back @@ WorkDoneProgress { value = End p; token }
         | None -> IO.return ()
 
       method send_notification (n : Lsp.Server_notification.t) : unit IO.t =
         notify_back n
-      (** Send a notification from the server to the client (general purpose method) *)
+      (** Send a notification from the server to the client (general purpose
+          method) *)
 
-      method send_request
-          : 'from_server.
-            'from_server Lsp.Server_request.t ->
-            (('from_server, Jsonrpc.Response.Error.t) result -> unit IO.t) ->
-            Req_id.t IO.t =
+      method send_request :
+          'from_server.
+          'from_server Lsp.Server_request.t ->
+          (('from_server, Jsonrpc.Response.Error.t) result -> unit IO.t) ->
+          Req_id.t IO.t =
         fun r h -> server_request @@ Request_and_handler (r, h)
-      (** Send a request from the server to the client (general purpose method) *)
+      (** Send a request from the server to the client (general purpose method)
+      *)
     end
 
   type nonrec doc_state = doc_state = {
@@ -162,10 +167,10 @@ module Make (IO : IO) = struct
     let+ x = x in
     Ok x
 
-  (** An easily overloadable class. Pick the methods you want to support.
-      The user must provide at least the callbacks for document lifecycle:
-      open, close, update. The most basic LSP server should check documents
-      when they're updated and report diagnostics back to the editor. *)
+  (** An easily overloadable class. Pick the methods you want to support. The
+      user must provide at least the callbacks for document lifecycle: open,
+      close, update. The most basic LSP server should check documents when
+      they're updated and report diagnostics back to the editor. *)
   class virtual server =
     object (self)
       inherit base_server
@@ -178,7 +183,7 @@ module Make (IO : IO) = struct
 
       method get_status = status
       (** Check if exit or shutdown request was made by the client.
-        @since 0.5 *)
+          @since 0.5 *)
 
       method find_doc (uri : DocumentUri.t) : doc_state option =
         try Some (Hashtbl.find docs uri) with Not_found -> None
@@ -223,50 +228,47 @@ module Make (IO : IO) = struct
 
       method config_completion : CompletionOptions.t option = None
       (** Configuration for the completion API.
-        @since 0.4 *)
+          @since 0.4 *)
 
       method config_code_lens_options : CodeLensOptions.t option = None
       (** @since 0.3 *)
 
-      method config_definition
-          : [ `Bool of bool | `DefinitionOptions of DefinitionOptions.t ] option
-          =
+      method config_definition :
+          [ `Bool of bool | `DefinitionOptions of DefinitionOptions.t ] option =
         None
       (** @since 0.3 *)
 
-      method config_hover
-          : [ `Bool of bool | `HoverOptions of HoverOptions.t ] option =
+      method config_hover :
+          [ `Bool of bool | `HoverOptions of HoverOptions.t ] option =
         None
       (** @since 0.3 *)
 
-      method config_inlay_hints
-          : [ `Bool of bool
-            | `InlayHintOptions of InlayHintOptions.t
-            | `InlayHintRegistrationOptions of InlayHintRegistrationOptions.t
-            ]
-            option =
+      method config_inlay_hints :
+          [ `Bool of bool
+          | `InlayHintOptions of InlayHintOptions.t
+          | `InlayHintRegistrationOptions of InlayHintRegistrationOptions.t
+          ]
+          option =
         None
       (** Configuration for the inlay hints API. *)
 
-      method config_symbol
-          : [ `Bool of bool
-            | `DocumentSymbolOptions of DocumentSymbolOptions.t
-            ]
-            option =
+      method config_symbol :
+          [ `Bool of bool | `DocumentSymbolOptions of DocumentSymbolOptions.t ]
+          option =
         None
       (** @since 0.3 *)
 
-      method config_code_action_provider
-          : [ `CodeActionOptions of CodeActionOptions.t | `Bool of bool ] =
+      method config_code_action_provider :
+          [ `CodeActionOptions of CodeActionOptions.t | `Bool of bool ] =
         `Bool false
       (** @since 0.3 *)
 
-      method config_modify_capabilities (c : ServerCapabilities.t)
-          : ServerCapabilities.t =
+      method config_modify_capabilities (c : ServerCapabilities.t) :
+          ServerCapabilities.t =
         c
-      (** Modify capabilities before sending them back to the client.
-        By default we just return them unmodified.
-        @since 0.3 *)
+      (** Modify capabilities before sending them back to the client. By default
+          we just return them unmodified.
+          @since 0.3 *)
 
       method config_list_commands : string list = []
       (** List of commands available *)
@@ -304,73 +306,73 @@ module Make (IO : IO) = struct
       (** Called when the user hovers on some identifier in the document *)
 
       method on_req_completion ~notify_back:(_ : notify_back) ~id:_ ~uri:_
-          ~pos:_ ~ctx:_ ~workDoneToken:_ ~partialResultToken:_ (_ : doc_state)
-          : [ `CompletionList of CompletionList.t
-            | `List of CompletionItem.t list
-            ]
-            option
-            IO.t =
+          ~pos:_ ~ctx:_ ~workDoneToken:_ ~partialResultToken:_ (_ : doc_state) :
+          [ `CompletionList of CompletionList.t
+          | `List of CompletionItem.t list
+          ]
+          option
+          IO.t =
         IO.return None
       (** Called when the user requests completion in the document *)
 
       method on_req_definition ~notify_back:(_ : notify_back) ~id:_ ~uri:_
-          ~pos:_ ~workDoneToken:_ ~partialResultToken:_ (_ : doc_state)
-          : Locations.t option IO.t =
+          ~pos:_ ~workDoneToken:_ ~partialResultToken:_ (_ : doc_state) :
+          Locations.t option IO.t =
         IO.return None
-      (** Called when the user wants to jump-to-definition  *)
+      (** Called when the user wants to jump-to-definition *)
 
       method on_req_code_lens ~notify_back:(_ : notify_back) ~id:_ ~uri:_
-          ~workDoneToken:_ ~partialResultToken:_ (_ : doc_state)
-          : CodeLens.t list IO.t =
+          ~workDoneToken:_ ~partialResultToken:_ (_ : doc_state) :
+          CodeLens.t list IO.t =
         IO.return []
       (** List code lenses for the given document
-        @since 0.3 *)
+          @since 0.3 *)
 
       method on_req_code_lens_resolve ~notify_back:(_ : notify_back) ~id:_
           (cl : CodeLens.t) : CodeLens.t IO.t =
         IO.return cl
       (** Code lens resolution, must return a code lens with non null "command"
-        @since 0.3 *)
+          @since 0.3 *)
 
       method on_req_code_action ~notify_back:(_ : notify_back) ~id:_
           (_c : CodeActionParams.t) : CodeActionResult.t IO.t =
         IO.return None
       (** Code action.
-        @since 0.3 *)
+          @since 0.3 *)
 
       method on_req_execute_command ~notify_back:(_ : notify_back) ~id:_
-          ~workDoneToken:_ (_c : string) (_args : Yojson.Safe.t list option)
-          : Yojson.Safe.t IO.t =
+          ~workDoneToken:_ (_c : string) (_args : Yojson.Safe.t list option) :
+          Yojson.Safe.t IO.t =
         IO.return `Null
       (** Execute a command with given arguments.
-        @since 0.3 *)
+          @since 0.3 *)
 
       method on_req_symbol ~notify_back:(_ : notify_back) ~id:_ ~uri:_
-          ~workDoneToken:_ ~partialResultToken:_ ()
-          : [ `DocumentSymbol of DocumentSymbol.t list
-            | `SymbolInformation of SymbolInformation.t list
-            ]
-            option
-            IO.t =
+          ~workDoneToken:_ ~partialResultToken:_ () :
+          [ `DocumentSymbol of DocumentSymbol.t list
+          | `SymbolInformation of SymbolInformation.t list
+          ]
+          option
+          IO.t =
         IO.return None
       (** List symbols in this document.
-        @since 0.3 *)
+          @since 0.3 *)
 
       method on_unknown_request ~notify_back:(_ : notify_back) ~server_request:_
           ~id:_ _meth _params : Yojson.Safe.t IO.t =
         IO.failwith "unhandled request"
 
       method on_req_inlay_hint ~notify_back:(_ : notify_back) ~id:_ ~uri:_
-          ~range:(_ : Lsp.Types.Range.t) ()
-          : Lsp.Types.InlayHint.t list option IO.t =
+          ~range:(_ : Lsp.Types.Range.t) () :
+          Lsp.Types.InlayHint.t list option IO.t =
         IO.return None
       (** Provide inlay hints for this document.
-        @since 0.5 *)
+          @since 0.5 *)
 
       method on_req_shutdown ~notify_back:(_ : notify_back) ~id:_ : unit IO.t =
         IO.return ()
       (** Process a shutdown request.
-        @since 0.7 *)
+          @since 0.7 *)
 
       method on_request : type r.
           notify_back:_ ->
