@@ -627,6 +627,10 @@ module Make (IO : IO) = struct
         IO.return ()
       (** Override to handle unprocessed notifications *)
 
+      method filter_text_document (_doc_uri: Lsp.Types.DocumentUri.t) : bool = true
+      (** Filter the document URI to check if we want to process it or not.
+        By default we accept all documents. *)
+
       method on_notification ~notify_back ~server_request
           (n : Lsp.Client_notification.t) : unit IO.t =
         let@ _sp =
@@ -651,6 +655,9 @@ module Make (IO : IO) = struct
         match n with
         | Lsp.Client_notification.TextDocumentDidOpen
             { DidOpenTextDocumentParams.textDocument = doc } ->
+          if not (self#filter_text_document doc.uri) then
+            IO.return ()
+          else (
           Log.debug (fun k ->
               k "notif: did open '%s'" (DocumentUri.to_path doc.uri));
           let notify_back =
@@ -672,7 +679,11 @@ module Make (IO : IO) = struct
               self#on_notif_doc_did_open
                 ~notify_back:(notify_back : notify_back)
                 doc ~content:st.content)
+            )
         | Lsp.Client_notification.TextDocumentDidClose { textDocument = doc } ->
+          if not (self#filter_text_document doc.uri) then
+            IO.return ()
+          else (
           Log.debug (fun k ->
               k "notif: did close '%s'" (DocumentUri.to_path doc.uri));
           let notify_back =
@@ -685,8 +696,12 @@ module Make (IO : IO) = struct
               self#on_notif_doc_did_close
                 ~notify_back:(notify_back : notify_back)
                 doc)
+          )
         | Lsp.Client_notification.TextDocumentDidChange
             { textDocument = doc; contentChanges = c } ->
+          if not (self#filter_text_document doc.uri) then
+            IO.return ()
+          else (
           Log.debug (fun k ->
               k "notif: did change '%s'" (DocumentUri.to_path doc.uri));
           let notify_back =
@@ -739,7 +754,11 @@ module Make (IO : IO) = struct
                 doc c
                 ~old_content:(Lsp.Text_document.text old_doc)
                 ~new_content:new_st.content)
+          )
         | Lsp.Client_notification.DidSaveTextDocument params ->
+          if not (self#filter_text_document params.textDocument.uri) then
+            IO.return ()
+          else (
           let notify_back =
             new notify_back
               ~workDoneToken:None ~partialResultToken:None
@@ -750,6 +769,7 @@ module Make (IO : IO) = struct
               self#on_notif_doc_did_save
                 ~notify_back:(notify_back : notify_back)
                 params)
+          )
         | Lsp.Client_notification.Exit ->
           status <- `ReceivedExit;
           IO.return ()
