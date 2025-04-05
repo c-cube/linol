@@ -1,6 +1,6 @@
 (** Simple JSON-RPC2 implementation.
 
-    See {{: https://www.jsonrpc.org/specification} the spec} *)
+    See {{:https://www.jsonrpc.org/specification} the spec} *)
 
 type json = Yojson.Safe.t
 
@@ -40,13 +40,13 @@ module type S = sig
     'from_server Lsp.Server_request.t ->
     (('from_server, Jsonrpc.Response.Error.t) result -> unit IO.t) ->
     Req_id.t IO.t
-  (** Send a request from the server, and pass a callback that will be
-      called with the result in the future.
+  (** Send a request from the server, and pass a callback that will be called
+      with the result in the future.
       @since 0.5 *)
 
   val run : ?shutdown:(unit -> bool) -> t -> unit IO.t
   (** Listen for incoming messages and responses.
-    @param shutdown if true, tells the server to shut down *)
+      @param shutdown if true, tells the server to shut down *)
 end
 
 module Make (IO : IO) : S with module IO = IO
