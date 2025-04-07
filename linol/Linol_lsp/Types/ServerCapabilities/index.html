@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>ServerCapabilities (linol.Linol_lsp.Types.ServerCapabilities)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../../../_odoc-theme/odoc.css"/><meta name="generator" content="odoc 3.0.0"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../../../index.html">Index</a> &#x00BB; <a href="../../../index.html">linol</a> &#x00BB; <a href="../../index.html">Linol_lsp</a> &#x00BB; <a href="../index.html">Types</a> &#x00BB; ServerCapabilities</nav><header class="odoc-preamble"><h1>Module <code><span>Types.ServerCapabilities</span></code></h1></header><div class="odoc-content"><div class="odoc-spec"><div class="spec type anchored" id="type-workspace"><a href="#type-workspace" class="anchor"></a><code><span><span class="keyword">type</span> workspace</span><span> = </span><span>{</span></code><ol><li id="type-workspace.workspaceFolders" class="def record field anchored"><a href="#type-workspace.workspaceFolders" class="anchor"></a><code><span>workspaceFolders : <span><a href="../WorkspaceFoldersServerCapabilities/index.html#type-t">WorkspaceFoldersServerCapabilities.t</a> option</span>;</span></code></li><li id="type-workspace.fileOperations" class="def record field anchored"><a href="#type-workspace.fileOperations" class="anchor"></a><code><span>fileOperations : <span><a href="../FileOperationOptions/index.html#type-t">FileOperationOptions.t</a> option</span>;</span></code></li></ol><code><span>}</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-create_workspace"><a href="#val-create_workspace" class="anchor"></a><code><span><span class="keyword">val</span> create_workspace : 
+  <span><span class="optlabel">?workspaceFolders</span>:<a href="../WorkspaceFoldersServerCapabilities/index.html#type-t">WorkspaceFoldersServerCapabilities.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?fileOperations</span>:<a href="../FileOperationOptions/index.html#type-t">FileOperationOptions.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>unit <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-workspace">workspace</a></span></code></div></div><div class="odoc-spec"><div class="spec type anchored" id="type-diagnostic"><a href="#type-diagnostic" class="anchor"></a><code><span><span class="keyword">type</span> diagnostic</span><span> = </span><span>{</span></code><ol><li id="type-diagnostic.markupMessageSupport" class="def record field anchored"><a href="#type-diagnostic.markupMessageSupport" class="anchor"></a><code><span>markupMessageSupport : <span>bool option</span>;</span></code></li></ol><code><span>}</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-create_diagnostic"><a href="#val-create_diagnostic" class="anchor"></a><code><span><span class="keyword">val</span> create_diagnostic : <span><span class="optlabel">?markupMessageSupport</span>:bool <span class="arrow">&#45;&gt;</span></span> <span>unit <span class="arrow">&#45;&gt;</span></span> <a href="#type-diagnostic">diagnostic</a></span></code></div></div><div class="odoc-spec"><div class="spec type anchored" id="type-textDocument"><a href="#type-textDocument" class="anchor"></a><code><span><span class="keyword">type</span> textDocument</span><span> = </span><span>{</span></code><ol><li id="type-textDocument.diagnostic" class="def record field anchored"><a href="#type-textDocument.diagnostic" class="anchor"></a><code><span>diagnostic : <span><a href="#type-diagnostic">diagnostic</a> option</span>;</span></code></li></ol><code><span>}</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-create_textDocument"><a href="#val-create_textDocument" class="anchor"></a><code><span><span class="keyword">val</span> create_textDocument : <span><span class="optlabel">?diagnostic</span>:<a href="#type-diagnostic">diagnostic</a> <span class="arrow">&#45;&gt;</span></span> <span>unit <span class="arrow">&#45;&gt;</span></span> <a href="#type-textDocument">textDocument</a></span></code></div></div><div class="odoc-spec"><div class="spec type anchored" id="type-t"><a href="#type-t" class="anchor"></a><code><span><span class="keyword">type</span> t</span><span> = </span><span>{</span></code><ol><li id="type-t.callHierarchyProvider" class="def record field anchored"><a href="#type-t.callHierarchyProvider" class="anchor"></a><code><span>callHierarchyProvider : <span><span>[ <span>`Bool of bool</span>
+                        <span><span>| `CallHierarchyOptions</span> of <a href="../CallHierarchyOptions/index.html#type-t">CallHierarchyOptions.t</a></span>
+                        <span><span>| `CallHierarchyRegistrationOptions</span> of
+                          <a href="../CallHierarchyRegistrationOptions/index.html#type-t">CallHierarchyRegistrationOptions.t</a></span> ]</span>
+                          option</span>;</span></code></li><li id="type-t.codeActionProvider" class="def record field anchored"><a href="#type-t.codeActionProvider" class="anchor"></a><code><span>codeActionProvider : <span><span>[ <span>`Bool of bool</span>
+                     <span><span>| `CodeActionOptions</span> of <a href="../CodeActionOptions/index.html#type-t">CodeActionOptions.t</a></span> ]</span>
+                       option</span>;</span></code></li><li id="type-t.codeLensProvider" class="def record field anchored"><a href="#type-t.codeLensProvider" class="anchor"></a><code><span>codeLensProvider : <span><a href="../CodeLensOptions/index.html#type-t">CodeLensOptions.t</a> option</span>;</span></code></li><li id="type-t.colorProvider" class="def record field anchored"><a href="#type-t.colorProvider" class="anchor"></a><code><span>colorProvider : <span><span>[ <span>`Bool of bool</span>
+                <span><span>| `DocumentColorOptions</span> of <a href="../DocumentColorOptions/index.html#type-t">DocumentColorOptions.t</a></span>
+                <span><span>| `DocumentColorRegistrationOptions</span> of
+                  <a href="../DocumentColorRegistrationOptions/index.html#type-t">DocumentColorRegistrationOptions.t</a></span> ]</span>
+                  option</span>;</span></code></li><li id="type-t.completionProvider" class="def record field anchored"><a href="#type-t.completionProvider" class="anchor"></a><code><span>completionProvider : <span><a href="../CompletionOptions/index.html#type-t">CompletionOptions.t</a> option</span>;</span></code></li><li id="type-t.declarationProvider" class="def record field anchored"><a href="#type-t.declarationProvider" class="anchor"></a><code><span>declarationProvider : <span><span>[ <span>`Bool of bool</span>
+                      <span><span>| `DeclarationOptions</span> of <a href="../DeclarationOptions/index.html#type-t">DeclarationOptions.t</a></span>
+                      <span><span>| `DeclarationRegistrationOptions</span> of
+                        <a href="../DeclarationRegistrationOptions/index.html#type-t">DeclarationRegistrationOptions.t</a></span> ]</span>
+                        option</span>;</span></code></li><li id="type-t.definitionProvider" class="def record field anchored"><a href="#type-t.definitionProvider" class="anchor"></a><code><span>definitionProvider : <span><span>[ <span>`Bool of bool</span>
+                     <span><span>| `DefinitionOptions</span> of <a href="../DefinitionOptions/index.html#type-t">DefinitionOptions.t</a></span> ]</span>
+                       option</span>;</span></code></li><li id="type-t.diagnosticProvider" class="def record field anchored"><a href="#type-t.diagnosticProvider" class="anchor"></a><code><span>diagnosticProvider : <span><span>[ <span>`DiagnosticOptions of <a href="../DiagnosticOptions/index.html#type-t">DiagnosticOptions.t</a></span>
+                     <span><span>| `DiagnosticRegistrationOptions</span> of
+                       <a href="../DiagnosticRegistrationOptions/index.html#type-t">DiagnosticRegistrationOptions.t</a></span> ]</span>
+                       option</span>;</span></code></li><li id="type-t.documentFormattingProvider" class="def record field anchored"><a href="#type-t.documentFormattingProvider" class="anchor"></a><code><span>documentFormattingProvider : <span><span>[ <span>`Bool of bool</span>
+                             <span><span>| `DocumentFormattingOptions</span> of
+                               <a href="../DocumentFormattingOptions/index.html#type-t">DocumentFormattingOptions.t</a></span> ]</span>
+                               option</span>;</span></code></li><li id="type-t.documentHighlightProvider" class="def record field anchored"><a href="#type-t.documentHighlightProvider" class="anchor"></a><code><span>documentHighlightProvider : <span><span>[ <span>`Bool of bool</span>
+                            <span><span>| `DocumentHighlightOptions</span> of
+                              <a href="../DocumentHighlightOptions/index.html#type-t">DocumentHighlightOptions.t</a></span> ]</span>
+                              option</span>;</span></code></li><li id="type-t.documentLinkProvider" class="def record field anchored"><a href="#type-t.documentLinkProvider" class="anchor"></a><code><span>documentLinkProvider : <span><a href="../DocumentLinkOptions/index.html#type-t">DocumentLinkOptions.t</a> option</span>;</span></code></li><li id="type-t.documentOnTypeFormattingProvider" class="def record field anchored"><a href="#type-t.documentOnTypeFormattingProvider" class="anchor"></a><code><span>documentOnTypeFormattingProvider : <span><a href="../DocumentOnTypeFormattingOptions/index.html#type-t">DocumentOnTypeFormattingOptions.t</a> option</span>;</span></code></li><li id="type-t.documentRangeFormattingProvider" class="def record field anchored"><a href="#type-t.documentRangeFormattingProvider" class="anchor"></a><code><span>documentRangeFormattingProvider : <span><span>[ <span>`Bool of bool</span>
+                                  <span><span>| `DocumentRangeFormattingOptions</span> of
+                                    <a href="../DocumentRangeFormattingOptions/index.html#type-t">DocumentRangeFormattingOptions.t</a></span> ]</span>
+                                    option</span>;</span></code></li><li id="type-t.documentSymbolProvider" class="def record field anchored"><a href="#type-t.documentSymbolProvider" class="anchor"></a><code><span>documentSymbolProvider : <span><span>[ <span>`Bool of bool</span>
+                         <span><span>| `DocumentSymbolOptions</span> of <a href="../DocumentSymbolOptions/index.html#type-t">DocumentSymbolOptions.t</a></span> ]</span>
+                           option</span>;</span></code></li><li id="type-t.executeCommandProvider" class="def record field anchored"><a href="#type-t.executeCommandProvider" class="anchor"></a><code><span>executeCommandProvider : <span><a href="../ExecuteCommandOptions/index.html#type-t">ExecuteCommandOptions.t</a> option</span>;</span></code></li><li id="type-t.experimental" class="def record field anchored"><a href="#type-t.experimental" class="anchor"></a><code><span>experimental : <span><a href="../../Import/Json/index.html#type-t">Import.Json.t</a> option</span>;</span></code></li><li id="type-t.foldingRangeProvider" class="def record field anchored"><a href="#type-t.foldingRangeProvider" class="anchor"></a><code><span>foldingRangeProvider : <span><span>[ <span>`Bool of bool</span>
+                       <span><span>| `FoldingRangeOptions</span> of <a href="../FoldingRangeOptions/index.html#type-t">FoldingRangeOptions.t</a></span>
+                       <span><span>| `FoldingRangeRegistrationOptions</span> of
+                         <a href="../FoldingRangeRegistrationOptions/index.html#type-t">FoldingRangeRegistrationOptions.t</a></span> ]</span>
+                         option</span>;</span></code></li><li id="type-t.hoverProvider" class="def record field anchored"><a href="#type-t.hoverProvider" class="anchor"></a><code><span>hoverProvider : <span><span>[ <span>`Bool of bool</span> <span><span>| `HoverOptions</span> of <a href="../HoverOptions/index.html#type-t">HoverOptions.t</a></span> ]</span> option</span>;</span></code></li><li id="type-t.implementationProvider" class="def record field anchored"><a href="#type-t.implementationProvider" class="anchor"></a><code><span>implementationProvider : <span><span>[ <span>`Bool of bool</span>
+                         <span><span>| `ImplementationOptions</span> of <a href="../ImplementationOptions/index.html#type-t">ImplementationOptions.t</a></span>
+                         <span><span>| `ImplementationRegistrationOptions</span> of
+                           <a href="../ImplementationRegistrationOptions/index.html#type-t">ImplementationRegistrationOptions.t</a></span> ]</span>
+                           option</span>;</span></code></li><li id="type-t.inlayHintProvider" class="def record field anchored"><a href="#type-t.inlayHintProvider" class="anchor"></a><code><span>inlayHintProvider : <span><span>[ <span>`Bool of bool</span>
+                    <span><span>| `InlayHintOptions</span> of <a href="../InlayHintOptions/index.html#type-t">InlayHintOptions.t</a></span>
+                    <span><span>| `InlayHintRegistrationOptions</span> of
+                      <a href="../InlayHintRegistrationOptions/index.html#type-t">InlayHintRegistrationOptions.t</a></span> ]</span>
+                      option</span>;</span></code></li><li id="type-t.inlineCompletionProvider" class="def record field anchored"><a href="#type-t.inlineCompletionProvider" class="anchor"></a><code><span>inlineCompletionProvider : <span><span>[ <span>`Bool of bool</span>
+                           <span><span>| `InlineCompletionOptions</span> of
+                             <a href="../InlineCompletionOptions/index.html#type-t">InlineCompletionOptions.t</a></span> ]</span>
+                             option</span>;</span></code></li><li id="type-t.inlineValueProvider" class="def record field anchored"><a href="#type-t.inlineValueProvider" class="anchor"></a><code><span>inlineValueProvider : <span><span>[ <span>`Bool of bool</span>
+                      <span><span>| `InlineValueOptions</span> of <a href="../InlineValueOptions/index.html#type-t">InlineValueOptions.t</a></span>
+                      <span><span>| `InlineValueRegistrationOptions</span> of
+                        <a href="../InlineValueRegistrationOptions/index.html#type-t">InlineValueRegistrationOptions.t</a></span> ]</span>
+                        option</span>;</span></code></li><li id="type-t.linkedEditingRangeProvider" class="def record field anchored"><a href="#type-t.linkedEditingRangeProvider" class="anchor"></a><code><span>linkedEditingRangeProvider : <span><span>[ <span>`Bool of bool</span>
+                             <span><span>| `LinkedEditingRangeOptions</span> of
+                               <a href="../LinkedEditingRangeOptions/index.html#type-t">LinkedEditingRangeOptions.t</a></span>
+                             <span><span>| `LinkedEditingRangeRegistrationOptions</span> of
+                               <a href="../LinkedEditingRangeRegistrationOptions/index.html#type-t">LinkedEditingRangeRegistrationOptions.t</a></span> ]</span>
+                               option</span>;</span></code></li><li id="type-t.monikerProvider" class="def record field anchored"><a href="#type-t.monikerProvider" class="anchor"></a><code><span>monikerProvider : <span><span>[ <span>`Bool of bool</span>
+                  <span><span>| `MonikerOptions</span> of <a href="../MonikerOptions/index.html#type-t">MonikerOptions.t</a></span>
+                  <span><span>| `MonikerRegistrationOptions</span> of <a href="../MonikerRegistrationOptions/index.html#type-t">MonikerRegistrationOptions.t</a></span> ]</span>
+                    option</span>;</span></code></li><li id="type-t.notebookDocumentSync" class="def record field anchored"><a href="#type-t.notebookDocumentSync" class="anchor"></a><code><span>notebookDocumentSync : <span><span>[ <span>`NotebookDocumentSyncOptions of
+                           <a href="../NotebookDocumentSyncOptions/index.html#type-t">NotebookDocumentSyncOptions.t</a></span>
+                       <span><span>| `NotebookDocumentSyncRegistrationOptions</span> of
+                         <a href="../NotebookDocumentSyncRegistrationOptions/index.html#type-t">NotebookDocumentSyncRegistrationOptions.t</a></span> ]</span>
+                         option</span>;</span></code></li><li id="type-t.positionEncoding" class="def record field anchored"><a href="#type-t.positionEncoding" class="anchor"></a><code><span>positionEncoding : <span><a href="../PositionEncodingKind/index.html#type-t">PositionEncodingKind.t</a> option</span>;</span></code></li><li id="type-t.referencesProvider" class="def record field anchored"><a href="#type-t.referencesProvider" class="anchor"></a><code><span>referencesProvider : <span><span>[ <span>`Bool of bool</span>
+                     <span><span>| `ReferenceOptions</span> of <a href="../ReferenceOptions/index.html#type-t">ReferenceOptions.t</a></span> ]</span>
+                       option</span>;</span></code></li><li id="type-t.renameProvider" class="def record field anchored"><a href="#type-t.renameProvider" class="anchor"></a><code><span>renameProvider : <span><span>[ <span>`Bool of bool</span> <span><span>| `RenameOptions</span> of <a href="../RenameOptions/index.html#type-t">RenameOptions.t</a></span> ]</span> option</span>;</span></code></li><li id="type-t.selectionRangeProvider" class="def record field anchored"><a href="#type-t.selectionRangeProvider" class="anchor"></a><code><span>selectionRangeProvider : <span><span>[ <span>`Bool of bool</span>
+                         <span><span>| `SelectionRangeOptions</span> of <a href="../SelectionRangeOptions/index.html#type-t">SelectionRangeOptions.t</a></span>
+                         <span><span>| `SelectionRangeRegistrationOptions</span> of
+                           <a href="../SelectionRangeRegistrationOptions/index.html#type-t">SelectionRangeRegistrationOptions.t</a></span> ]</span>
+                           option</span>;</span></code></li><li id="type-t.semanticTokensProvider" class="def record field anchored"><a href="#type-t.semanticTokensProvider" class="anchor"></a><code><span>semanticTokensProvider : <span><span>[ <span>`SemanticTokensOptions of <a href="../SemanticTokensOptions/index.html#type-t">SemanticTokensOptions.t</a></span>
+                         <span><span>| `SemanticTokensRegistrationOptions</span> of
+                           <a href="../SemanticTokensRegistrationOptions/index.html#type-t">SemanticTokensRegistrationOptions.t</a></span> ]</span>
+                           option</span>;</span></code></li><li id="type-t.signatureHelpProvider" class="def record field anchored"><a href="#type-t.signatureHelpProvider" class="anchor"></a><code><span>signatureHelpProvider : <span><a href="../SignatureHelpOptions/index.html#type-t">SignatureHelpOptions.t</a> option</span>;</span></code></li><li id="type-t.textDocument" class="def record field anchored"><a href="#type-t.textDocument" class="anchor"></a><code><span>textDocument : <span><a href="#type-textDocument">textDocument</a> option</span>;</span></code></li><li id="type-t.textDocumentSync" class="def record field anchored"><a href="#type-t.textDocumentSync" class="anchor"></a><code><span>textDocumentSync : <span><span>[ <span>`TextDocumentSyncOptions of <a href="../TextDocumentSyncOptions/index.html#type-t">TextDocumentSyncOptions.t</a></span>
+                   <span><span>| `TextDocumentSyncKind</span> of <a href="../TextDocumentSyncKind/index.html#type-t">TextDocumentSyncKind.t</a></span> ]</span>
+                     option</span>;</span></code></li><li id="type-t.typeDefinitionProvider" class="def record field anchored"><a href="#type-t.typeDefinitionProvider" class="anchor"></a><code><span>typeDefinitionProvider : <span><span>[ <span>`Bool of bool</span>
+                         <span><span>| `TypeDefinitionOptions</span> of <a href="../TypeDefinitionOptions/index.html#type-t">TypeDefinitionOptions.t</a></span>
+                         <span><span>| `TypeDefinitionRegistrationOptions</span> of
+                           <a href="../TypeDefinitionRegistrationOptions/index.html#type-t">TypeDefinitionRegistrationOptions.t</a></span> ]</span>
+                           option</span>;</span></code></li><li id="type-t.typeHierarchyProvider" class="def record field anchored"><a href="#type-t.typeHierarchyProvider" class="anchor"></a><code><span>typeHierarchyProvider : <span><span>[ <span>`Bool of bool</span>
+                        <span><span>| `TypeHierarchyOptions</span> of <a href="../TypeHierarchyOptions/index.html#type-t">TypeHierarchyOptions.t</a></span>
+                        <span><span>| `TypeHierarchyRegistrationOptions</span> of
+                          <a href="../TypeHierarchyRegistrationOptions/index.html#type-t">TypeHierarchyRegistrationOptions.t</a></span> ]</span>
+                          option</span>;</span></code></li><li id="type-t.workspace" class="def record field anchored"><a href="#type-t.workspace" class="anchor"></a><code><span>workspace : <span><a href="#type-workspace">workspace</a> option</span>;</span></code></li><li id="type-t.workspaceSymbolProvider" class="def record field anchored"><a href="#type-t.workspaceSymbolProvider" class="anchor"></a><code><span>workspaceSymbolProvider : <span><span>[ <span>`Bool of bool</span>
+                          <span><span>| `WorkspaceSymbolOptions</span> of <a href="../WorkspaceSymbolOptions/index.html#type-t">WorkspaceSymbolOptions.t</a></span> ]</span>
+                            option</span>;</span></code></li></ol><code><span>}</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-create"><a href="#val-create" class="anchor"></a><code><span><span class="keyword">val</span> create : 
+  <span><span class="optlabel">?callHierarchyProvider</span>:
+    <span>[ <span>`Bool of bool</span>
+    <span><span>| `CallHierarchyOptions</span> of <a href="../CallHierarchyOptions/index.html#type-t">CallHierarchyOptions.t</a></span>
+    <span><span>| `CallHierarchyRegistrationOptions</span> of <a href="../CallHierarchyRegistrationOptions/index.html#type-t">CallHierarchyRegistrationOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?codeActionProvider</span>:
+    <span>[ <span>`Bool of bool</span> <span><span>| `CodeActionOptions</span> of <a href="../CodeActionOptions/index.html#type-t">CodeActionOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?codeLensProvider</span>:<a href="../CodeLensOptions/index.html#type-t">CodeLensOptions.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?colorProvider</span>:
+    <span>[ <span>`Bool of bool</span>
+    <span><span>| `DocumentColorOptions</span> of <a href="../DocumentColorOptions/index.html#type-t">DocumentColorOptions.t</a></span>
+    <span><span>| `DocumentColorRegistrationOptions</span> of <a href="../DocumentColorRegistrationOptions/index.html#type-t">DocumentColorRegistrationOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?completionProvider</span>:<a href="../CompletionOptions/index.html#type-t">CompletionOptions.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?declarationProvider</span>:
+    <span>[ <span>`Bool of bool</span>
+    <span><span>| `DeclarationOptions</span> of <a href="../DeclarationOptions/index.html#type-t">DeclarationOptions.t</a></span>
+    <span><span>| `DeclarationRegistrationOptions</span> of <a href="../DeclarationRegistrationOptions/index.html#type-t">DeclarationRegistrationOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?definitionProvider</span>:
+    <span>[ <span>`Bool of bool</span> <span><span>| `DefinitionOptions</span> of <a href="../DefinitionOptions/index.html#type-t">DefinitionOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?diagnosticProvider</span>:
+    <span>[ <span>`DiagnosticOptions of <a href="../DiagnosticOptions/index.html#type-t">DiagnosticOptions.t</a></span>
+    <span><span>| `DiagnosticRegistrationOptions</span> of <a href="../DiagnosticRegistrationOptions/index.html#type-t">DiagnosticRegistrationOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?documentFormattingProvider</span>:
+    <span>[ <span>`Bool of bool</span>
+    <span><span>| `DocumentFormattingOptions</span> of <a href="../DocumentFormattingOptions/index.html#type-t">DocumentFormattingOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?documentHighlightProvider</span>:
+    <span>[ <span>`Bool of bool</span> <span><span>| `DocumentHighlightOptions</span> of <a href="../DocumentHighlightOptions/index.html#type-t">DocumentHighlightOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?documentLinkProvider</span>:<a href="../DocumentLinkOptions/index.html#type-t">DocumentLinkOptions.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?documentOnTypeFormattingProvider</span>:<a href="../DocumentOnTypeFormattingOptions/index.html#type-t">DocumentOnTypeFormattingOptions.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?documentRangeFormattingProvider</span>:
+    <span>[ <span>`Bool of bool</span>
+    <span><span>| `DocumentRangeFormattingOptions</span> of <a href="../DocumentRangeFormattingOptions/index.html#type-t">DocumentRangeFormattingOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?documentSymbolProvider</span>:
+    <span>[ <span>`Bool of bool</span> <span><span>| `DocumentSymbolOptions</span> of <a href="../DocumentSymbolOptions/index.html#type-t">DocumentSymbolOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?executeCommandProvider</span>:<a href="../ExecuteCommandOptions/index.html#type-t">ExecuteCommandOptions.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?experimental</span>:<a href="../../Import/Json/index.html#type-t">Import.Json.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?foldingRangeProvider</span>:
+    <span>[ <span>`Bool of bool</span>
+    <span><span>| `FoldingRangeOptions</span> of <a href="../FoldingRangeOptions/index.html#type-t">FoldingRangeOptions.t</a></span>
+    <span><span>| `FoldingRangeRegistrationOptions</span> of <a href="../FoldingRangeRegistrationOptions/index.html#type-t">FoldingRangeRegistrationOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?hoverProvider</span>:<span>[ <span>`Bool of bool</span> <span><span>| `HoverOptions</span> of <a href="../HoverOptions/index.html#type-t">HoverOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?implementationProvider</span>:
+    <span>[ <span>`Bool of bool</span>
+    <span><span>| `ImplementationOptions</span> of <a href="../ImplementationOptions/index.html#type-t">ImplementationOptions.t</a></span>
+    <span><span>| `ImplementationRegistrationOptions</span> of <a href="../ImplementationRegistrationOptions/index.html#type-t">ImplementationRegistrationOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?inlayHintProvider</span>:
+    <span>[ <span>`Bool of bool</span>
+    <span><span>| `InlayHintOptions</span> of <a href="../InlayHintOptions/index.html#type-t">InlayHintOptions.t</a></span>
+    <span><span>| `InlayHintRegistrationOptions</span> of <a href="../InlayHintRegistrationOptions/index.html#type-t">InlayHintRegistrationOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?inlineCompletionProvider</span>:
+    <span>[ <span>`Bool of bool</span> <span><span>| `InlineCompletionOptions</span> of <a href="../InlineCompletionOptions/index.html#type-t">InlineCompletionOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?inlineValueProvider</span>:
+    <span>[ <span>`Bool of bool</span>
+    <span><span>| `InlineValueOptions</span> of <a href="../InlineValueOptions/index.html#type-t">InlineValueOptions.t</a></span>
+    <span><span>| `InlineValueRegistrationOptions</span> of <a href="../InlineValueRegistrationOptions/index.html#type-t">InlineValueRegistrationOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?linkedEditingRangeProvider</span>:
+    <span>[ <span>`Bool of bool</span>
+    <span><span>| `LinkedEditingRangeOptions</span> of <a href="../LinkedEditingRangeOptions/index.html#type-t">LinkedEditingRangeOptions.t</a></span>
+    <span><span>| `LinkedEditingRangeRegistrationOptions</span> of
+      <a href="../LinkedEditingRangeRegistrationOptions/index.html#type-t">LinkedEditingRangeRegistrationOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?monikerProvider</span>:
+    <span>[ <span>`Bool of bool</span>
+    <span><span>| `MonikerOptions</span> of <a href="../MonikerOptions/index.html#type-t">MonikerOptions.t</a></span>
+    <span><span>| `MonikerRegistrationOptions</span> of <a href="../MonikerRegistrationOptions/index.html#type-t">MonikerRegistrationOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?notebookDocumentSync</span>:
+    <span>[ <span>`NotebookDocumentSyncOptions of <a href="../NotebookDocumentSyncOptions/index.html#type-t">NotebookDocumentSyncOptions.t</a></span>
+    <span><span>| `NotebookDocumentSyncRegistrationOptions</span> of
+      <a href="../NotebookDocumentSyncRegistrationOptions/index.html#type-t">NotebookDocumentSyncRegistrationOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?positionEncoding</span>:<a href="../PositionEncodingKind/index.html#type-t">PositionEncodingKind.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?referencesProvider</span>:
+    <span>[ <span>`Bool of bool</span> <span><span>| `ReferenceOptions</span> of <a href="../ReferenceOptions/index.html#type-t">ReferenceOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?renameProvider</span>:<span>[ <span>`Bool of bool</span> <span><span>| `RenameOptions</span> of <a href="../RenameOptions/index.html#type-t">RenameOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?selectionRangeProvider</span>:
+    <span>[ <span>`Bool of bool</span>
+    <span><span>| `SelectionRangeOptions</span> of <a href="../SelectionRangeOptions/index.html#type-t">SelectionRangeOptions.t</a></span>
+    <span><span>| `SelectionRangeRegistrationOptions</span> of <a href="../SelectionRangeRegistrationOptions/index.html#type-t">SelectionRangeRegistrationOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?semanticTokensProvider</span>:
+    <span>[ <span>`SemanticTokensOptions of <a href="../SemanticTokensOptions/index.html#type-t">SemanticTokensOptions.t</a></span>
+    <span><span>| `SemanticTokensRegistrationOptions</span> of <a href="../SemanticTokensRegistrationOptions/index.html#type-t">SemanticTokensRegistrationOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?signatureHelpProvider</span>:<a href="../SignatureHelpOptions/index.html#type-t">SignatureHelpOptions.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?textDocument</span>:<a href="#type-textDocument">textDocument</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?textDocumentSync</span>:
+    <span>[ <span>`TextDocumentSyncOptions of <a href="../TextDocumentSyncOptions/index.html#type-t">TextDocumentSyncOptions.t</a></span>
+    <span><span>| `TextDocumentSyncKind</span> of <a href="../TextDocumentSyncKind/index.html#type-t">TextDocumentSyncKind.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?typeDefinitionProvider</span>:
+    <span>[ <span>`Bool of bool</span>
+    <span><span>| `TypeDefinitionOptions</span> of <a href="../TypeDefinitionOptions/index.html#type-t">TypeDefinitionOptions.t</a></span>
+    <span><span>| `TypeDefinitionRegistrationOptions</span> of <a href="../TypeDefinitionRegistrationOptions/index.html#type-t">TypeDefinitionRegistrationOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?typeHierarchyProvider</span>:
+    <span>[ <span>`Bool of bool</span>
+    <span><span>| `TypeHierarchyOptions</span> of <a href="../TypeHierarchyOptions/index.html#type-t">TypeHierarchyOptions.t</a></span>
+    <span><span>| `TypeHierarchyRegistrationOptions</span> of <a href="../TypeHierarchyRegistrationOptions/index.html#type-t">TypeHierarchyRegistrationOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?workspace</span>:<a href="#type-workspace">workspace</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?workspaceSymbolProvider</span>:
+    <span>[ <span>`Bool of bool</span> <span><span>| `WorkspaceSymbolOptions</span> of <a href="../WorkspaceSymbolOptions/index.html#type-t">WorkspaceSymbolOptions.t</a></span> ]</span> <span class="arrow">&#45;&gt;</span></span>
+  <span>unit <span class="arrow">&#45;&gt;</span></span>
+  <a href="#type-t">t</a></span></code></div></div><div class="odoc-include"><details open="open"><summary class="spec include"><code><span><span class="keyword">include</span> <a href="../../../../ppx_yojson_conv_lib/Ppx_yojson_conv_lib/Yojsonable/module-type-S/index.html">Linol_lsp.Import.Json.Jsonable.S</a> <span class="keyword">with</span> <span><span class="keyword">type</span> <a href="../../../../ppx_yojson_conv_lib/Ppx_yojson_conv_lib/Yojsonable/module-type-S/index.html#type-t">t</a> := <a href="#type-t">t</a></span></span></code></summary><div class="odoc-spec"><div class="spec value anchored" id="val-t_of_yojson"><a href="#val-t_of_yojson" class="anchor"></a><code><span><span class="keyword">val</span> t_of_yojson : <span><a href="../../../../yojson/Yojson/Safe/index.html#type-t">Yojson.Safe.t</a> <span class="arrow">&#45;&gt;</span></span> <a href="#type-t">t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-yojson_of_t"><a href="#val-yojson_of_t" class="anchor"></a><code><span><span class="keyword">val</span> yojson_of_t : <span><a href="#type-t">t</a> <span class="arrow">&#45;&gt;</span></span> <a href="../../../../yojson/Yojson/Safe/index.html#type-t">Yojson.Safe.t</a></span></code></div></div></details></div></div></body></html>
