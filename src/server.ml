@@ -627,7 +627,8 @@ module Make (IO : IO) = struct
         IO.return ()
       (** Override to handle unprocessed notifications *)
 
-      method filter_text_document (_doc_uri: Lsp.Types.DocumentUri.t) : bool = true
+      method filter_text_document (_doc_uri : Lsp.Types.DocumentUri.t) : bool =
+        true
       (** Filter the document URI to check if we want to process it or not.
         By default we accept all documents. *)
 
@@ -658,117 +659,117 @@ module Make (IO : IO) = struct
           if not (self#filter_text_document doc.uri) then
             IO.return ()
           else (
-          Log.debug (fun k ->
-              k "notif: did open '%s'" (DocumentUri.to_path doc.uri));
-          let notify_back =
-            new notify_back
-              ~uri:doc.uri ~workDoneToken:None ~partialResultToken:None
-              ~version:doc.version ~notify_back ~server_request ()
-          in
-          let st =
-            {
-              uri = doc.uri;
-              version = doc.version;
-              content = doc.text;
-              languageId = doc.languageId;
-            }
-          in
-          Hashtbl.replace docs doc.uri st;
+            Log.debug (fun k ->
+                k "notif: did open '%s'" (DocumentUri.to_path doc.uri));
+            let notify_back =
+              new notify_back
+                ~uri:doc.uri ~workDoneToken:None ~partialResultToken:None
+                ~version:doc.version ~notify_back ~server_request ()
+            in
+            let st =
+              {
+                uri = doc.uri;
+                version = doc.version;
+                content = doc.text;
+                languageId = doc.languageId;
+              }
+            in
+            Hashtbl.replace docs doc.uri st;
 
-          async self (fun () ->
-              self#on_notif_doc_did_open
-                ~notify_back:(notify_back : notify_back)
-                doc ~content:st.content)
-            )
+            async self (fun () ->
+                self#on_notif_doc_did_open
+                  ~notify_back:(notify_back : notify_back)
+                  doc ~content:st.content)
+          )
         | Lsp.Client_notification.TextDocumentDidClose { textDocument = doc } ->
           if not (self#filter_text_document doc.uri) then
             IO.return ()
           else (
-          Log.debug (fun k ->
-              k "notif: did close '%s'" (DocumentUri.to_path doc.uri));
-          let notify_back =
-            new notify_back
-              ~workDoneToken:None ~partialResultToken:None ~uri:doc.uri
-              ~notify_back ~server_request ()
-          in
+            Log.debug (fun k ->
+                k "notif: did close '%s'" (DocumentUri.to_path doc.uri));
+            let notify_back =
+              new notify_back
+                ~workDoneToken:None ~partialResultToken:None ~uri:doc.uri
+                ~notify_back ~server_request ()
+            in
 
-          async self (fun () ->
-              self#on_notif_doc_did_close
-                ~notify_back:(notify_back : notify_back)
-                doc)
+            async self (fun () ->
+                self#on_notif_doc_did_close
+                  ~notify_back:(notify_back : notify_back)
+                  doc)
           )
         | Lsp.Client_notification.TextDocumentDidChange
             { textDocument = doc; contentChanges = c } ->
           if not (self#filter_text_document doc.uri) then
             IO.return ()
           else (
-          Log.debug (fun k ->
-              k "notif: did change '%s'" (DocumentUri.to_path doc.uri));
-          let notify_back =
-            new notify_back
-              ~workDoneToken:None ~partialResultToken:None ~uri:doc.uri
-              ~notify_back ~server_request ()
-          in
+            Log.debug (fun k ->
+                k "notif: did change '%s'" (DocumentUri.to_path doc.uri));
+            let notify_back =
+              new notify_back
+                ~workDoneToken:None ~partialResultToken:None ~uri:doc.uri
+                ~notify_back ~server_request ()
+            in
 
-          let old_doc =
-            match Hashtbl.find_opt docs doc.uri with
-            | None ->
-              (* WTF vscode. Well let's try and deal with it. *)
-              Log.err (fun k ->
-                  k "unknown document: '%s'" (DocumentUri.to_path doc.uri));
-              let version = doc.version in
+            let old_doc =
+              match Hashtbl.find_opt docs doc.uri with
+              | None ->
+                (* WTF vscode. Well let's try and deal with it. *)
+                Log.err (fun k ->
+                    k "unknown document: '%s'" (DocumentUri.to_path doc.uri));
+                let version = doc.version in
 
-              let languageId = "" in
-              (* FIXME*)
-              Lsp.Text_document.make ~position_encoding:positionEncoding
-                (DidOpenTextDocumentParams.create
-                   ~textDocument:
-                     (TextDocumentItem.create ~languageId ~uri:doc.uri ~version
-                        ~text:""))
-            | Some st ->
-              Lsp.Text_document.make ~position_encoding:positionEncoding
-                (DidOpenTextDocumentParams.create
-                   ~textDocument:
-                     (TextDocumentItem.create ~languageId:st.languageId
-                        ~uri:doc.uri ~version:st.version ~text:st.content))
-          in
+                let languageId = "" in
+                (* FIXME*)
+                Lsp.Text_document.make ~position_encoding:positionEncoding
+                  (DidOpenTextDocumentParams.create
+                     ~textDocument:
+                       (TextDocumentItem.create ~languageId ~uri:doc.uri
+                          ~version ~text:""))
+              | Some st ->
+                Lsp.Text_document.make ~position_encoding:positionEncoding
+                  (DidOpenTextDocumentParams.create
+                     ~textDocument:
+                       (TextDocumentItem.create ~languageId:st.languageId
+                          ~uri:doc.uri ~version:st.version ~text:st.content))
+            in
 
-          let new_doc : Lsp.Text_document.t =
-            Lsp.Text_document.apply_content_changes old_doc c
-          in
+            let new_doc : Lsp.Text_document.t =
+              Lsp.Text_document.apply_content_changes old_doc c
+            in
 
-          let new_st : doc_state =
-            {
-              uri = doc.uri;
-              languageId = Lsp.Text_document.languageId new_doc;
-              content = Lsp.Text_document.text new_doc;
-              version = Lsp.Text_document.version new_doc;
-            }
-          in
+            let new_st : doc_state =
+              {
+                uri = doc.uri;
+                languageId = Lsp.Text_document.languageId new_doc;
+                content = Lsp.Text_document.text new_doc;
+                version = Lsp.Text_document.version new_doc;
+              }
+            in
 
-          Hashtbl.replace docs doc.uri new_st;
+            Hashtbl.replace docs doc.uri new_st;
 
-          async self (fun () ->
-              self#on_notif_doc_did_change
-                ~notify_back:(notify_back : notify_back)
-                doc c
-                ~old_content:(Lsp.Text_document.text old_doc)
-                ~new_content:new_st.content)
+            async self (fun () ->
+                self#on_notif_doc_did_change
+                  ~notify_back:(notify_back : notify_back)
+                  doc c
+                  ~old_content:(Lsp.Text_document.text old_doc)
+                  ~new_content:new_st.content)
           )
         | Lsp.Client_notification.DidSaveTextDocument params ->
           if not (self#filter_text_document params.textDocument.uri) then
             IO.return ()
           else (
-          let notify_back =
-            new notify_back
-              ~workDoneToken:None ~partialResultToken:None
-              ~uri:params.textDocument.uri ~notify_back ~server_request ()
-          in
+            let notify_back =
+              new notify_back
+                ~workDoneToken:None ~partialResultToken:None
+                ~uri:params.textDocument.uri ~notify_back ~server_request ()
+            in
 
-          async self (fun () ->
-              self#on_notif_doc_did_save
-                ~notify_back:(notify_back : notify_back)
-                params)
+            async self (fun () ->
+                self#on_notif_doc_did_save
+                  ~notify_back:(notify_back : notify_back)
+                  params)
           )
         | Lsp.Client_notification.Exit ->
           status <- `ReceivedExit;
