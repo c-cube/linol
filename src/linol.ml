@@ -3,12 +3,15 @@
     Abstraction over The "Lsp" library, to make it easier to develop
     LSP servers in OCaml (but not necessarily {b for} OCaml). *)
 
-module Imports = struct
-  module Lsp = Lsp
-  module Jsonrpc = Jsonrpc
-end    
     
 module type IO = Sigs.IO
+
+(** {2 Re-export from vendored lsp} *)
+
+module Lsp = Linol_lsp.Lsp
+module Jsonrpc = Linol_jsonrpc.Jsonrpc
+
+(** {2 Main modules} *)
 
 module Jsonrpc2 = Jsonrpc2
 module Server = Server

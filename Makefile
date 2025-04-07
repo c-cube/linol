@@ -13,6 +13,9 @@ clean:
 doc:
 	@dune build @doc
 
+update-submodules:
+	@git submodule update --init
+
 VERSION=$(shell awk '/^version:/ {print $$2}' linol.opam)
 
 update_next_tag:

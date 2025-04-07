@@ -15,6 +15,8 @@
      of a document are expected to be able to return.
 *)
 
+module Lsp = Linol.Lsp
+
 type state_after_processing = unit
 
 let process_some_input_file (_file_contents : string) : state_after_processing =

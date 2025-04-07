@@ -1,3 +1,7 @@
+open struct
+  module Lsp = Linol_lsp.Lsp
+end
+
 module type IO = Linol.IO
 
 module IO_lwt :
