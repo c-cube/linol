@@ -124,7 +124,8 @@ module Make (IO : IO) : S with module IO = IO = struct
     `Int id
 
   (** Registers a new handler for a request response. The return indicates
-      whether a value was inserted or not (in which case it's already present). *)
+      whether a value was inserted or not (in which case it's already present).
+  *)
   let register_server_request_response_handler (self : t) (id : Req_id.t)
       (handler : server_request_handler_pair) : bool =
     if Hashtbl.mem self.pending_responses id then
@@ -363,10 +364,10 @@ module Make (IO : IO) : S with module IO = IO = struct
       Req_id.t IO.t =
     server_request self (Request_and_handler (req, cb))
 
-  (** [shutdown ()] is called after processing each request to check if the server
-    could wait for new messages.
-    When launching an LSP server using [Server.Make.server], the
-    natural choice for it is [s#get_status = `ReceivedExit] *)
+  (** [shutdown ()] is called after processing each request to check if the
+      server could wait for new messages. When launching an LSP server using
+      [Server.Make.server], the natural choice for it is
+      [s#get_status = `ReceivedExit] *)
   let run ?(shutdown = fun _ -> false) (self : t) : unit IO.t =
     let async f =
       self.s#spawn_query_handler f;
