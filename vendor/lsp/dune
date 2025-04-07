@@ -1,0 +1,11 @@
+(copy_files %{project_root}/submodules/ocaml-lsp/lsp/src/*.{ml,mli,mll})
+
+(library
+ (name linol_lsp)
+ (public_name linol.lsp)
+ (libraries linol_jsonrpc ppx_yojson_conv_lib uutf yojson)
+ (flags :standard -open Linol_jsonrpc)
+ (lint
+  (pps ppx_yojson_conv)))
+
+(ocamllex uri_lexer)

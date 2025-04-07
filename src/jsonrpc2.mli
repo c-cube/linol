@@ -2,6 +2,7 @@
 
     See {{: https://www.jsonrpc.org/specification} the spec} *)
 
+open Common_
 type json = Yojson.Safe.t
 
 module type IO = Sigs.IO

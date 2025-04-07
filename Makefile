@@ -16,6 +16,9 @@ doc:
 fmt:
 	@dune build @fmt --auto-promote
 
+update-submodules:
+	@git submodule update --init
+
 VERSION=$(shell awk '/^version:/ {print $$2}' linol.opam)
 
 update_next_tag:
