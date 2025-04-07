@@ -3,7 +3,6 @@
     Abstraction over The "Lsp" library, to make it easier to develop
     LSP servers in OCaml (but not necessarily {b for} OCaml). *)
 
-    
 module type IO = Sigs.IO
 
 (** {2 Re-export from vendored lsp} *)

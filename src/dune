@@ -3,4 +3,10 @@
  (public_name linol)
  (private_modules log)
  (flags :standard -warn-error -a+8)
- (libraries yojson logs threads trace.core (re_export linol.lsp) (re_export linol.jsonrpc)))
+ (libraries
+  yojson
+  logs
+  threads
+  trace.core
+  (re_export linol.lsp)
+  (re_export linol.jsonrpc)))
