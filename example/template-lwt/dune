@@ -3,11 +3,4 @@
  (libraries
   ; Deps on linol + LWT backend
   linol
-  linol-lwt
-  ; Types from the lsp library are exposed by the linol libs,
-  ; and thus almost guaranteed to be used by code using linol;
-  ; it is thus better to explicitly list lsp as a dep rather
-  ; than rely on its inclusion as a transitive dep of linol
-  ; since it would for instance generate errors if the
-  ; implicit-transitive-deps option of dune is set to false
-  lsp))
+  linol-lwt))
