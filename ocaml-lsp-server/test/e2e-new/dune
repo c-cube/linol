@@ -1,0 +1,70 @@
+(env
+ (_
+  (env-vars
+   (OCAMLLSP_TEST true)
+   (LEV_DEBUG 1))))
+
+(library
+ (name ocaml_lsp_e2e)
+ (inline_tests
+  (enabled_if
+   (= %{os_type} Unix))
+  (deps
+   %{bin:ocamlformat-rpc}
+   for_ppx.ml
+   for_pp.ml
+   (package ocaml-lsp-server)))
+ (libraries
+  unix
+  stdune
+  fiber
+  yojson
+  ppx_yojson_conv_lib
+  lev_fiber
+  lev
+  ocaml_lsp_server
+  spawn
+  jsonrpc
+  lsp
+  lsp_fiber
+  ;; This is because of the (implicit_transitive_deps false)
+  ;; in dune-project
+  base
+  ppx_expect
+  ppx_expect.config
+  ppx_expect.config_types
+  ppx_inline_test.config)
+ (preprocess
+  (per_module
+   ((action
+     (run sed "s/world/universe/g" %{input-file}))
+    for_pp)
+   ((pps ppx_expect)
+    action_extract
+    action_inline
+    action_mark_remove
+    code_actions
+    completion
+    completions
+    construct
+    doc_to_md
+    document_flow
+    exit_notification
+    for_ppx
+    hover_extended
+    inlay_hints
+    merlin_call_compatible
+    metrics
+    semantic_hl_data
+    semantic_hl_helpers
+    semantic_hl_tests
+    start_stop
+    syntax_doc_tests
+    test
+    type_enclosing
+    documentation
+    merlin_jump
+    type_search
+    with_pp
+    with_ppx
+    workspace_change_config))))
