@@ -1,4 +1,4 @@
-(copy_files %{project_root}/submodules/ocaml-lsp/jsonrpc/src/*.{ml,mli})
+(copy_files %{project_root}/thirdparty/lsp/jsonrpc/src/*.{ml,mli})
 
 (library
  (name linol_jsonrpc)

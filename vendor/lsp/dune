@@ -1,4 +1,4 @@
-(copy_files %{project_root}/submodules/ocaml-lsp/lsp/src/*.{ml,mli,mll})
+(copy_files %{project_root}/thirdparty/lsp/lsp/src/*.{ml,mli,mll})
 
 (library
  (name linol_lsp)
