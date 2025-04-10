@@ -1,0 +1,12 @@
+_build/
+_opam/
+.idea/
+.log/
+.vscode/
+node_modules/
+tmp/
+.DS_Store
+.merlin
+*.install
+*.log
+result
