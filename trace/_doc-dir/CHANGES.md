@@ -1,3 +1,10 @@
+# 0.9.1
+
+
+- fix: upper bound on ppxlib
+- feat trace-tef: print names of non-closed spans upon exit
+- fix: block signals in background threads
+
 # 0.9
 
 - add an extensible sum type, so users can implement custom events. For example
