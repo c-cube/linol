@@ -1,4 +1,11 @@
 
+# 0.10
+
+- use `git subtree` to vendor lsp+jsonrpc, so that they
+    are not dependencies anymore and do not conflict with
+    other users
+- Add `filter_text_document` to ignore some documents
+
 # 0.9
 
 - Drop redundant dependency on atomic
