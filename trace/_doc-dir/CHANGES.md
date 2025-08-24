@@ -1,3 +1,22 @@
+# 0.10
+
+- breaking: manual spans now take a `explicit_span_ctx` as parent, that
+    can potentially be transmitted across processes/machines. It also
+    is intended to be more compatible with OTEL.
+- breaking `trace.subscriber`: timestamps are `int64`ns now, not floats
+- breaking `trace`: pass a `string` trace_id in manual spans, which helps
+    for backends such as opentelemetry. It's also useful for extensions.
+
+- refactor `trace-fuchsia`: full revamp of the library, modularized, using subscriber API
+- refactor `trace-tef`: split into exporter,writer,subscriber, using subscriber API
+- feat: add `trace.event`, useful for background threads
+- feat `trace.subscriber`: add `Span_tbl`, and a depopt on picos_aux
+- feat `trace.subscriber`: tee a whole array at once
+- feat tef-tldrs: use EMIT_TEF_AT_EXIT
+- feat `trace.subscriber`: depopt on unix for timestamps
+- refactor `trace-tef`: depopt on unix for TEF timestamps
+
+
 # 0.9.1
 
 
