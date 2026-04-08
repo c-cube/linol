@@ -1,7 +1,7 @@
 
 # Trace
 
-[![Build and Test](https://github.com/c-cube/ocaml-trace/actions/workflows/main.yml/badge.svg)](https://github.com/c-cube/ocaml-trace/actions/workflows/main.yml)
+[![Build and Test](https://github.com/ocaml-tracing/ocaml-trace/actions/workflows/main.yml/badge.svg)](https://github.com/ocaml-tracing/ocaml-trace/actions/workflows/main.yml)
 
 This small library provides basic types that can be used to instrument
 a library or application, either by hand or via a ppx.
@@ -138,7 +138,7 @@ In your `library` or `executable` stanza, add: `(preprocess (pps ppx_trace))`.
 The dependency on `trace.core` is automatically added. You still need to
 configure a backend to actually do collection.
 
-## Backends
+## Backends (collector implementations)
 
 Concrete tracing or observability formats such as:
 
@@ -154,14 +154,15 @@ Concrete tracing or observability formats such as:
         This requires the rust `tldrs` program to be in path.
   * ~~[ ] richer bindings with [ocaml-catapult](https://github.com/imandra-ai/catapult),
         with multi-process backends, etc.~~ (subsumed by tldrs)
-- [x] Tracy (see [ocaml-tracy](https://github.com/imandra-ai/ocaml-tracy), more specifically `tracy-client.trace`)
-- [x] Opentelemetry (see [ocaml-opentelemetry](https://github.com/imandra-ai/ocaml-opentelemetry/), in `opentelemetry.trace`)
+- [x] Tracy (see [ocaml-tracy](https://github.com/ocaml-tracing/ocaml-tracy), more specifically `tracy-client.trace`)
+- [x] Opentelemetry (see [ocaml-opentelemetry](https://github.com/ocaml-tracing/ocaml-opentelemetry/), in `opentelemetry.trace`)
 - [ ] landmarks?
+- [ ] native perfetto backend
+- [ ] OCaml runtime events
 - [ ] Logs (only for messages, obviously)
+
+Collectors are now more composable and replace `trace.subscribers`.
 
 ## Subscribers
 
-The library `trace.subscriber` defines composable _subscribers_, which are sets of callbacks
-that consume tracing events.
-Multiple subscribers can be aggregated together (with events being dispatched to all of them)
-and be installed as a normal _collector_.
+Not a thing anymore.

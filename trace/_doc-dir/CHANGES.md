@@ -1,3 +1,29 @@
+# 0.12
+
+- use `current_span` when entering spans or sending messages
+- add `Trace.Ambient_span_provider.t` concept, to track the current span.
+    It is not part of the collector and is optional.
+- add `trace.thread-local-storage` optional library that implements the `Ambient_span_provider.t`
+- add a runtime events collector, + test, in `trace-runtime-events`
+- add `{thread,process}_sort_index` extension + TEF support
+
+# 0.11
+
+- entire rework of the collector, now lighter, and using an open sum type
+    for `span`. No global state is required anymore.
+- add `enabled` to the collector
+- extensible `metric`; pass level around in collector
+- remove unused deps on hmap, thread-local-storage
+- add `Trace.with_setup_collector`
+- add `trace.debug` to find what spans were not closed on exit
+- remove dead code and `on_tracing_error`
+- remove subscriber entirely
+- core: remove `current_span` from collector
+- update deps to ppxlib=0.37~
+- breaking: use poly variants for `user_data/span_flavor`
+- use `at_exit` in `trace_tef` and `tldrs`
+- fix fuchsia: bound check
+
 # 0.10
 
 - breaking: manual spans now take a `explicit_span_ctx` as parent, that
@@ -15,7 +41,6 @@
 - feat tef-tldrs: use EMIT_TEF_AT_EXIT
 - feat `trace.subscriber`: depopt on unix for timestamps
 - refactor `trace-tef`: depopt on unix for TEF timestamps
-
 
 # 0.9.1
 
