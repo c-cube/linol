@@ -37,7 +37,7 @@ let diagnostics (_state : state_after_processing) : Lsp.Types.Diagnostic.t list
    so that users only need to override methods that they want the server to
    actually meaningfully interpret and respond to.
 *)
-class lsp_server ~(sw: Eio.Switch.t) =
+class lsp_server ~(sw : Eio.Switch.t) =
   object (self)
     inherit Linol_eio.Jsonrpc2.server
 
