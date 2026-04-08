@@ -13,8 +13,11 @@ clean:
 doc:
 	@dune build @doc
 
-fmt:
+format:
 	@dune build @fmt --auto-promote
+
+format-check:
+	@dune build $(DUNE_OPTS) @fmt --display=quiet
 
 update-submodules:
 	@git submodule update --init
