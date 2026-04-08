@@ -8,7 +8,7 @@
 
 (name linol)
 
-(version 0.10)
+(version 0.11)
 
 (license MIT)
 
