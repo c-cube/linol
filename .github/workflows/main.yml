@@ -13,7 +13,6 @@ jobs:
       with:
         submodules: 'recursive'
     - run: opam pin -n .
-    - run: opam depext -yt linol linol-lwt
     - run: opam install linol linol-lwt --deps-only -t
     - run: opam exec -- dune build -p linol,linol-lwt
     - run: opam exec -- dune runtest -p linol,linol-lwt
@@ -26,7 +25,6 @@ jobs:
       with:
         submodules: 'recursive'
     - run: opam pin -n .
-    - run: opam depext -yt linol linol-lwt linol-eio
     - run: opam install -t . --deps-only
     - run: opam exec -- dune build
     - run: opam exec -- dune runtest
