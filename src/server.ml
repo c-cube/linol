@@ -61,7 +61,7 @@ module Make (IO : IO) = struct
             server_request:send_request ->
             id:Req_id.t ->
             'a Lsp.Client_request.t ->
-            ('a, string) result IO.t
+            ('a, Jsonrpc.Response.Error.t) result IO.t
       (** Method called to handle client requests.
           @param notify_back
             an object used to reply to the client, send progress messages,
@@ -379,21 +379,31 @@ module Make (IO : IO) = struct
           server_request:_ ->
           id:Req_id.t ->
           r Lsp.Client_request.t ->
-          (r, string) result IO.t =
+          (r, Jsonrpc.Response.Error.t) result IO.t =
         fun ~notify_back ~server_request ~id (r : _ Lsp.Client_request.t) ->
           Trace.with_span ~__FILE__ ~__LINE__ "linol.on-request"
-          @@ fun _sp : (r, string) result IO.t ->
+          @@ fun _sp : (r, Jsonrpc.Response.Error.t) result IO.t ->
           (* handler to catch all errors *)
-          let try_catch : (unit -> (r, _) result IO.t) -> (r, _) result IO.t =
+          let try_catch :
+              (unit -> (r, Jsonrpc.Response.Error.t) result IO.t) ->
+              (r, Jsonrpc.Response.Error.t) result IO.t =
            fun f ->
-            IO.catch f (fun exn bt ->
-                let msg =
-                  spf "LSP request handler failed with %s\n%s"
-                    (Printexc.to_string exn)
-                    (Printexc.raw_backtrace_to_string bt)
-                in
-                Log.err (fun k -> k "%s" msg);
-                IO.return @@ Error msg)
+            IO.catch f (fun (exn : exn) bt ->
+                match exn with
+                | Linol_jsonrpc.Jsonrpc.Response.Error.E e ->
+                  IO.return @@ Error e
+                | _ ->
+                  let msg =
+                    spf "LSP request handler failed with %s\n%s"
+                      (Printexc.to_string exn)
+                      (Printexc.raw_backtrace_to_string bt)
+                  in
+                  Log.err (fun k -> k "%s" msg);
+                  IO.return
+                  @@ Error
+                       (Jsonrpc.Response.Error.make
+                          ~code:Jsonrpc.Response.Error.Code.InternalError
+                          ~message:msg ()))
           in
 
           try_catch @@ fun () ->
@@ -737,7 +747,8 @@ module Make (IO : IO) = struct
             in
 
             let new_doc : Lsp.Text_document.t =
-              Lsp.Text_document.apply_content_changes old_doc c
+              Lsp.Text_document.apply_content_changes ~version:doc.version
+                old_doc c
             in
 
             let new_st : doc_state =

@@ -228,10 +228,7 @@ module Make (IO : IO) : S with module IO = IO = struct
             | Ok reply ->
               let reply_json = Lsp.Client_request.yojson_of_result r reply in
               Jsonrpc.Response.ok id reply_json
-            | Error message ->
-              Jsonrpc.Response.error id
-                (Jsonrpc.Response.Error.make
-                   ~code:Jsonrpc.Response.Error.Code.InternalError ~message ())
+            | Error err -> Jsonrpc.Response.error id err
           in
 
           send_response self response
