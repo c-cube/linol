@@ -2,7 +2,7 @@ open struct
   module Lsp = Linol_lsp.Lsp
 end
 
-module type IO = Linol.HTTP_IO
+module type IO = Linol.StringIO
 
 module IO_lwt :
   IO

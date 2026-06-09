@@ -4,7 +4,8 @@
     in OCaml (but not necessarily {b for} OCaml). *)
 
 module type IO = Sigs.IO
-module type HTTP_IO = Sigs.StringIO
+module type StringIO = Sigs.StringIO
+module type BaseIO = Sigs.BaseIO
 
 (** {2 Re-export from vendored lsp} *)
 
