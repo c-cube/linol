@@ -25,14 +25,6 @@ module type S = sig
     t
   (** Create a connection from the pair of channels *)
 
-  val create_stdio :
-    ?on_received:(json -> unit) ->
-    ?on_sent:(json -> unit) ->
-    env:IO.env ->
-    server ->
-    t
-  (** Create a connection using stdin/stdout *)
-
   val send_server_notification : t -> Lsp.Server_notification.t -> unit IO.t
   (** Send a notification from the server.
       @since 0.5 *)
@@ -52,3 +44,4 @@ module type S = sig
 end
 
 module Make (IO : IO) : S with module IO = IO
+module Make_HTTP (IO : Sigs.StringIO) : S with module IO = Http_io.Make(IO)
