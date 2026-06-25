@@ -24,7 +24,7 @@
  (synopsis "LSP server library")
  (depends
   ("yojson"
-   (and (>= "1.6") (< "3.0")))
+   (>= "1.6"))
   "logs"
   ("trace"
    (>= "0.4"))
