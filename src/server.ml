@@ -25,7 +25,7 @@ module Req_id = struct
 end
 
 (** Server interface for some IO substrate. *)
-module Make (IO : IO) = struct
+module Make (IO : BaseIO) = struct
   open Lsp.Types
   module Position = Position
   module Range = Range

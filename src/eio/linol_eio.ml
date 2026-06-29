@@ -2,7 +2,7 @@ open struct
   module Lsp = Linol_lsp.Lsp
 end
 
-module type IO = Linol.IO
+module type IO = Linol.StringIO
 
 module IO_eio :
   IO
@@ -65,4 +65,4 @@ include IO_eio
 
 type doc_state = Linol.Server.doc_state
 
-module Jsonrpc2 = Linol.Jsonrpc2.Make (IO_eio)
+module Jsonrpc2 = Linol.Jsonrpc2.Make_HTTP (IO_eio)

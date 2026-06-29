@@ -84,7 +84,10 @@ let run () =
   Eio_main.run @@ fun env ->
   Eio.Switch.run @@ fun sw ->
   let s = new lsp_server ~sw in
-  let server = Linol_eio.Jsonrpc2.create_stdio ~env s in
+  let server =
+    Linol_eio.Jsonrpc2.create ~ic:(Linol_eio.stdin env)
+      ~oc:(Linol_eio.stdout env) s
+  in
   let task () =
     let shutdown () = s#get_status = `ReceivedExit in
     Linol_eio.Jsonrpc2.run ~shutdown server
