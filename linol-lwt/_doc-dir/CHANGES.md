@@ -1,4 +1,12 @@
 
+# 0.11
+
+- breaking: the Eio library now needs the output channel to be paired with
+    an `Eio.Mutex.t` to prevent race conditions (#58)
+- Allow request handlers to return Response.Errors
+- bring back `Linol_eio.spawn` for logging uncaught exceptions
+- Make template-eio handle requests concurrently
+
 # 0.10
 
 - use `git subtree` to vendor lsp+jsonrpc, so that they
