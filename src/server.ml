@@ -273,6 +273,11 @@ module Make (IO : IO) = struct
       method config_list_commands : string list = []
       (** List of commands available *)
 
+      method config_server_info : InitializeResult.serverInfo option = None
+      (** The server name and version.
+
+          @since 0.12 *)
+
       method on_req_initialize ~notify_back:(_ : notify_back)
           (i : InitializeParams.t) : InitializeResult.t IO.t =
         let sync_opts = self#config_sync_opts in
@@ -298,7 +303,9 @@ module Make (IO : IO) = struct
             ~positionEncoding ()
           |> self#config_modify_capabilities
         in
-        IO.return @@ InitializeResult.create ~capabilities ()
+        IO.return
+        @@ InitializeResult.create ~capabilities
+          ?serverInfo:self#config_server_info ()
 
       method on_req_hover ~notify_back:(_ : notify_back) ~id:_ ~uri:_ ~pos:_
           ~workDoneToken:_ (_ : doc_state) : Hover.t option IO.t =
