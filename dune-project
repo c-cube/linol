@@ -47,9 +47,7 @@
    (= :version))
   base-unix
   ("lwt"
-   (and
-    (>= "5.1")
-    (< "6.0")))
+   (>= "5.10"))
   ("odoc" :with-doc)))
 
 (package
