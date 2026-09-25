@@ -1,3 +1,7 @@
+# 0.12
+
+- Add a way to override `serverInfo`
+- Remove yojson < 3.0.0 constraint and loosen lwt bounds
 
 # 0.11
 
