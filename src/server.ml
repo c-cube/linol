@@ -305,7 +305,7 @@ module Make (IO : IO) = struct
         in
         IO.return
         @@ InitializeResult.create ~capabilities
-          ?serverInfo:self#config_server_info ()
+             ?serverInfo:self#config_server_info ()
 
       method on_req_hover ~notify_back:(_ : notify_back) ~id:_ ~uri:_ ~pos:_
           ~workDoneToken:_ (_ : doc_state) : Hover.t option IO.t =
