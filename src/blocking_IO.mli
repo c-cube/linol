@@ -1,7 +1,7 @@
 (** Blocking IO with a new thread for each [spawn]. *)
 
 include
-  Sigs.IO
+  Sigs.StringIO
     with type 'a t = 'a
      and type env = unit
      and type in_channel = in_channel
